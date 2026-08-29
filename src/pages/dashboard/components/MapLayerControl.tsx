@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { colorLayersIcon, colorReportIcon, colorVisibleIcon, colorWindIcon } from '@/assets'
+import { colorLayersIcon, colorReportIcon, colorVisibleIcon } from '@/assets'
 
-type MapLayers = { airQuality: boolean; weather: boolean; reports: boolean }
-type MapLayerControlProps = { layers: MapLayers; airQualityUnavailable: boolean; weatherUnavailable: boolean; onChange: (layers: MapLayers) => void }
+type MapLayers = { weather: boolean; reports: boolean }
+type MapLayerControlProps = { layers: MapLayers; weatherUnavailable: boolean; onChange: (layers: MapLayers) => void }
 
-export function MapLayerControl({ layers, airQualityUnavailable, weatherUnavailable, onChange }: MapLayerControlProps) {
+export function MapLayerControl({ layers, weatherUnavailable, onChange }: MapLayerControlProps) {
   const [isOpen, setIsOpen] = useState(false)
   const controlRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -23,7 +23,6 @@ export function MapLayerControl({ layers, airQualityUnavailable, weatherUnavaila
   }
 
   const options = [
-    { key: 'airQuality' as const, label: 'Air quality', icon: colorWindIcon, unavailable: airQualityUnavailable },
     { key: 'weather' as const, label: 'Weather along route', icon: colorVisibleIcon, unavailable: weatherUnavailable },
     { key: 'reports' as const, label: 'Community reports', icon: colorReportIcon, unavailable: false },
   ]

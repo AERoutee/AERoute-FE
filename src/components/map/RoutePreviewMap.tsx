@@ -1,12 +1,11 @@
 import { LoaderCircle, MapPinned, TriangleAlert } from 'lucide-react'
 import { memo, useEffect, useRef, useState } from 'react'
-import { apiBaseURL, hasGoogleMapsKey, loadGoogleMaps } from '@/config'
+import { hasGoogleMapsKey, loadGoogleMaps } from '@/config'
 import { roadReportIcons } from '@/lib'
 import type { Place, RoadReport, RoadReportBounds, RouteOption, WeatherConditions } from '@/types'
 
 type LiveLocation = { latitude: number; longitude: number; accuracy: number; heading: number; speed: number | null }
 const emptyWeatherPoints: Array<{ latitude: number; longitude: number; conditions: WeatherConditions }> = []
-const transparentTile = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='
 
 type RoutePreviewMapProps = {
   origin: Place | null
@@ -24,10 +23,8 @@ type RoutePreviewMapProps = {
   onBoundsChange?: (bounds: RoadReportBounds) => void
   onReportSelect?: (report: RoadReport) => void
   onRouteSelect?: (routeId: string) => void
-  showAirQuality?: boolean
   showWeather?: boolean
   showReports?: boolean
-  onAirQualityAvailabilityChange?: (available: boolean) => void
   onWeatherAvailabilityChange?: (available: boolean) => void
 }
 
@@ -74,14 +71,6 @@ function coloredRouteSegments(path: google.maps.LatLngLiteral[], route: RouteOpt
   }
   segments.push({ path: current, color })
   return segments
-}
-
-function tileCoordinate(latitude: number, longitude: number, zoom: number) {
-  const size = 2 ** zoom
-  const x = Math.floor((longitude + 180) / 360 * size)
-  const latitudeRadians = latitude * Math.PI / 180
-  const y = Math.floor((1 - Math.asinh(Math.tan(latitudeRadians)) / Math.PI) / 2 * size)
-  return { x, y }
 }
 
 function distanceMeters(a: google.maps.LatLngLiteral, b: google.maps.LatLngLiteral) {
@@ -227,7 +216,7 @@ function weatherCardIcon(weather: Extract<WeatherConditions, { status: 'availabl
   return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, size: new google.maps.Size(168, 72), scaledSize: new google.maps.Size(168, 72), anchor: new google.maps.Point(84, 90) }
 }
 
-function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId, liveLocation, followLiveLocation, reports = [], weatherPoints = emptyWeatherPoints, navigationRoute, onNavigationProgress, onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, showAirQuality = false, showWeather = false, showReports = true, onAirQualityAvailabilityChange, onWeatherAvailabilityChange }: RoutePreviewMapProps) {
+function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId, liveLocation, followLiveLocation, reports = [], weatherPoints = emptyWeatherPoints, navigationRoute, onNavigationProgress, onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, showWeather = false, showReports = true, onWeatherAvailabilityChange }: RoutePreviewMapProps) {
   const nodeRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<google.maps.Map | null>(null)
   const locationMarkerRef = useRef<google.maps.Marker | null>(null)
@@ -236,13 +225,12 @@ function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId
   const reportMarkers = useRef<google.maps.Marker[]>([])
   const reportInfoWindowRef = useRef<google.maps.InfoWindow | null>(null)
   const weatherMarkersRef = useRef<google.maps.Marker[]>([])
-  const airQualityLayerRef = useRef<google.maps.ImageMapType | null>(null)
-  const callbacks = useRef({ onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, onNavigationProgress, onAirQualityAvailabilityChange, onWeatherAvailabilityChange })
+  const callbacks = useRef({ onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, onNavigationProgress, onWeatherAvailabilityChange })
   const lastFitSignatureRef = useRef('')
   const [status, setStatus] = useState<'loading' | 'ready' | 'unavailable' | 'error'>(hasGoogleMapsKey() ? 'loading' : 'unavailable')
   const [mapVersion, setMapVersion] = useState(0)
 
-  useEffect(() => { callbacks.current = { onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, onNavigationProgress, onAirQualityAvailabilityChange, onWeatherAvailabilityChange } }, [onAirQualityAvailabilityChange, onBoundsChange, onDestinationChange, onNavigationProgress, onOriginChange, onReportSelect, onRouteSelect, onWeatherAvailabilityChange])
+  useEffect(() => { callbacks.current = { onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, onNavigationProgress, onWeatherAvailabilityChange } }, [onBoundsChange, onDestinationChange, onNavigationProgress, onOriginChange, onReportSelect, onRouteSelect, onWeatherAvailabilityChange])
 
   useEffect(() => {
     if (!hasGoogleMapsKey() || !nodeRef.current) return
@@ -326,24 +314,6 @@ function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId
     else { accuracyCircleRef.current.setCenter(rawPosition); accuracyCircleRef.current.setRadius(liveLocation.accuracy) }
     if (followLiveLocation) { map.panTo(position); if (navigationRoute && (map.getZoom() ?? 0) < 17) map.setZoom(17) }
   }, [followLiveLocation, liveLocation, mapVersion, navigationRoute])
-
-  useEffect(() => {
-    const map = mapRef.current
-    let active = true
-    if (!map) return
-    if (!showAirQuality && airQualityLayerRef.current) { const index = map.overlayMapTypes.getArray().indexOf(airQualityLayerRef.current); if (index >= 0) map.overlayMapTypes.removeAt(index); return }
-    if (!showAirQuality) return
-    const center = map.getCenter() ?? new google.maps.LatLng(-6.2088, 106.8456)
-    const zoom = Math.min(16, Math.max(0, Math.round(map.getZoom() ?? 12)))
-    const { x, y } = tileCoordinate(center.lat(), center.lng(), zoom)
-    void fetch(`${apiBaseURL}/api/v1/map-layers/air-quality/${zoom}/${x}/${y}`).then((response) => {
-      if (!active || !response.ok || response.headers.get('X-AERoute-Layer-Available') === 'false') throw new Error('unavailable')
-      callbacks.current.onAirQualityAvailabilityChange?.(true)
-      if (!airQualityLayerRef.current) airQualityLayerRef.current = new google.maps.ImageMapType({ getTileUrl: (coordinate, tileZoom) => { const gridSize = 2 ** tileZoom; if (tileZoom > 16 || coordinate.y < 0 || coordinate.y >= gridSize) return transparentTile; const normalizedX = ((coordinate.x % gridSize) + gridSize) % gridSize; return `${apiBaseURL}/api/v1/map-layers/air-quality/${tileZoom}/${normalizedX}/${coordinate.y}` }, tileSize: new google.maps.Size(256, 256), minZoom: 0, maxZoom: 16, name: 'Air quality', opacity: .62 })
-      if (!map.overlayMapTypes.getArray().includes(airQualityLayerRef.current)) map.overlayMapTypes.insertAt(0, airQualityLayerRef.current)
-    }).catch(() => { if (active) callbacks.current.onAirQualityAvailabilityChange?.(false) })
-    return () => { active = false }
-  }, [mapVersion, showAirQuality])
 
   useEffect(() => {
     const map = mapRef.current
