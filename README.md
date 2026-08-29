@@ -1,164 +1,272 @@
-# AERoute Frontend
+<div align="center">
+  <img src="src/assets/aeroute-logo.png" alt="AERoute" width="180" />
 
-React/Vite SPA untuk pengalaman publik, autentikasi, route planner, live map, weather context, dan community road reports AERoute.
+  # AERoute Frontend
+  ### A clearer route for every breath.
 
-## Stack
+  [![GitHub](https://img.shields.io/badge/GitHub-AERoute--FE-181717?style=for-the-badge&logo=github)](https://github.com/AERoutee/AERoute-FE)
 
-- React 19
-- Vite 8
-- TypeScript
-- React Router
-- TanStack Query
-- Axios
-- Better Auth client
-- Google Maps JavaScript API
-- Tailwind CSS 4
-- Motion
-- Lucide React dan selected Icons8 Color assets
+  **Submission for ITECHNO CUP 2026 - Web Development**
 
-## Prerequisites
+  **By AERoute Team**
+</div>
 
-- Node.js 24 atau versi LTS modern yang didukung Vite 8.
-- npm.
-- AERoute backend yang berjalan dan dapat diakses browser.
-- Google Maps browser key yang dibatasi dengan HTTP referrer.
+---
 
-## Environment
+## 📋 Daftar Isi
 
-Salin kontrak environment:
+- [Tim Developer](#-tim-developer)
+- [Tentang Proyek](#-tentang-proyek)
+- [Fitur Unggulan](#-fitur-unggulan)
+- [Demo & Screenshot](#-demo--screenshot)
+- [Teknologi](#-teknologi)
+- [Arsitektur Sistem](#-arsitektur-sistem)
+- [Instalasi & Setup](#-instalasi--setup)
+- [Penggunaan](#-penggunaan)
+- [API Documentation](#-api-documentation)
+- [Testing](#-testing)
+- [Lisensi](#-lisensi)
 
-```powershell
-Copy-Item .env.example .env
-```
+---
 
-| Variable | Fungsi |
-| --- | --- |
-| `VITE_API_BASE_URL` | Base URL backend, contoh `http://localhost:3000` |
-| `VITE_GOOGLE_MAPS_BROWSER_KEY` | Browser-restricted key untuk Maps JavaScript dan Places |
+## 👥 Tim Developer
 
-Semua variable dengan prefix `VITE_` dikirim ke browser. Jangan memasukkan database URL, server API key, SMTP credential, OAuth secret, Better Auth secret, atau object-storage secret.
-
-## Install dan Run
-
-```powershell
-npm ci
-npm run dev
-```
-
-Development server berjalan pada `http://localhost:5173` secara default.
-
-## Scripts
-
-| Command | Fungsi |
-| --- | --- |
-| `npm run dev` | Menjalankan Vite development server |
-| `npm run lint` | Menjalankan Oxlint |
-| `npm run typecheck` | Menjalankan TypeScript project checks |
-| `npm run build` | Typecheck dan production bundle |
-| `npm run preview` | Menjalankan hasil build secara lokal |
-
-## Halaman dan Access
-
-| Route | Access | Tujuan |
+| Nama | Peran | GitHub |
 | --- | --- | --- |
-| `/` | Public | Landing dan product story |
-| `/about` | Public | Product background dan principles |
-| `/vision-mission` | Public | Vision, mission, dan product promise |
-| `/faq` | Public | FAQ route, exposure, account, dan trust |
-| `/contact` | Public | Contact information |
-| `/dashboard` | Authenticated | Map-first route planner dan reports |
-| `/profile` | Authenticated | Profile, avatar, password, OAuth credential setup |
-| `/login` | Guest | Email/password dan Google sign-in |
-| `/register` | Guest | Account registration |
-| `/forgot-password` | Guest | Membuat recovery challenge |
-| `/verify-otp?id=...` | Recovery flow | Verifikasi OTP enam digit |
-| `/new-password?id=...` | Verified recovery flow | Menetapkan password baru |
+| **Andrian Pratama** | Project Lead & Lead Full-Stack Developer | [@Yanzz231](https://github.com/Yanzz231) |
+| **Jeremy Auriel Zhang** | Full-Stack Developer | [@jeremzhg](https://github.com/jeremzhg) |
+| **Calvin Wu** | Product Manager | [@5calvinw](https://github.com/5calvinw) |
 
-Route registry berada di `src/config/routes.ts`. Setiap route memiliki title browser sendiri serta layout/access metadata.
+---
 
-## Struktur Source
+## 🎯 Tentang Proyek
+
+### Latar Belakang
+
+Pengguna walking dan cycling memerlukan lebih dari waktu serta jarak. Kondisi PM2.5, cuaca, hambatan jalur, dan perubahan lapangan perlu terlihat pada satu peta yang mudah digunakan di desktop maupun mobile.
+
+### Solusi yang Ditawarkan
+
+AERoute Frontend menyediakan pengalaman map-first untuk mencari lokasi, membandingkan route alternatives, memilih garis route, melihat PM2.5 per segmen, membaca weather checkpoints, mengikuti live location, dan mengirim community road report dengan foto.
+
+### Tujuan Proyek
+
+- 🎯 **Tujuan Utama**: menyajikan route trade-off secara visual dan dapat dipahami.
+- 📊 **Target Pengguna**: pejalan kaki, pesepeda, dan komuter perkotaan.
+- 💡 **Value Proposition**: satu interface responsif untuk route, PM2.5, weather, live location, dan laporan komunitas.
+
+---
+
+## ✨ Fitur Unggulan
+
+| Fitur | Deskripsi | Keunggulan |
+| --- | --- | --- |
+| **Map-first Planner** | Planner, route options, weather, dan reports tampil di atas Google Map | Pengguna tetap mempertahankan konteks geografis |
+| **Clickable Alternatives** | Garis route memiliki hit area besar dan dapat dipilih langsung | Route card dan map selalu sinkron |
+| **Segment PM2.5 Colors** | Garis berubah hijau, kuning, atau merah berdasarkan sample | Kondisi lokal sepanjang route lebih mudah dipahami |
+| **Weather Checkpoints** | Weather cards tampil pada selected route | Tidak memenuhi Routes panel dengan informasi non-route |
+| **Road Reports** | Bottom sheet/panel report dengan camera, gallery, dan preview | Mobile-friendly dan mendukung informasi lapangan |
+
+Fitur tambahan:
+
+- Live geolocation marker dan heading rotation.
+- Profile image crop serta upload.
+- Email/password dan Google OAuth.
+- OTP recovery dengan opaque challenge ID.
+- Mobile bottom navigation dan draggable sheets.
+- Public product pages serta responsive 404.
+
+---
+
+## 📸 Demo & Screenshot
+
+### Live Demo
+
+Live demo belum dipublikasikan.
+
+Target deployment: `https://aeroute.my.id`.
+
+### Screenshot Aplikasi
+
+Screenshot kompetisi belum ditambahkan. Tambahkan capture landing, desktop dashboard, mobile dashboard, profile, dan report flow setelah deployment final.
+
+### Video Demo
+
+Video demo belum tersedia.
+
+---
+
+## 🛠️ Teknologi
+
+### Tech Stack
+
+```text
+Framework    : React 19 + Vite 8 + TypeScript
+Styling      : Tailwind CSS 4
+Routing      : React Router
+Server State : TanStack Query + Axios
+Auth Client  : Better Auth React
+Maps         : Google Maps JavaScript API + Places
+Animation    : Motion
+Icons        : Lucide React + selected Icons8 Color assets
+```
+
+### Alasan Pemilihan Teknologi
+
+| Teknologi | Alasan Pemilihan |
+| --- | --- |
+| **React** | Cocok untuk map overlays, sheets, account flows, dan state interaktif |
+| **Vite** | Development cepat dan production code splitting |
+| **TanStack Query** | Memisahkan server state dari state interface |
+| **Google Maps JS** | Map, Places autocomplete, markers, polylines, dan InfoWindow |
+| **Motion** | Animasi deterministic untuk public pages dan panels |
+
+### Dependencies Utama
+
+```json
+{
+  "react": "^19.2.4",
+  "react-router": "^7.13.2",
+  "@tanstack/react-query": "^5.95.2",
+  "axios": "^1.13.6",
+  "better-auth": "^1.7.1",
+  "motion": "^12.38.0"
+}
+```
+
+---
+
+## 🏗️ Arsitektur Sistem
+
+```text
+React Pages
+  -> feature hooks
+  -> API modules
+  -> Axios client
+  -> AERoute Backend
+
+Dashboard
+  -> Google Maps JS API
+  -> live geolocation
+  -> route polylines
+  -> weather/report markers
+```
+
+### Folder Structure
 
 ```text
 src/
-├── api/                 # Raw Axios request modules
-├── assets/              # Logo, photos, dan licensed local icons
-├── components/
-│   ├── auth/            # Guards dan security illustrations
-│   ├── common/          # Reusable app components
-│   ├── layout/          # Public/dashboard shells dan account menu
-│   ├── map/             # Google Map, route, weather, report markers
-│   └── planner/         # Location inputs dan autocomplete
-├── config/              # API client, auth client, Maps loader, routes
-├── constants/           # Endpoint paths
-├── context/             # Toast provider
-├── hooks/               # Mutations, mobile sheet, draggable panels
-├── lib/                 # Stateless helpers dan report icon registry
-├── pages/               # Route-level feature screens
-└── types/               # API and domain contracts
+├── api/          # Axios request modules
+├── assets/       # Logo, photos, local icons
+├── components/   # Auth, common, layout, map, planner
+├── config/       # API/auth/maps clients and route registry
+├── constants/    # Endpoint constants
+├── context/      # Toast context
+├── hooks/        # Query mutations and panel behavior
+├── lib/          # Stateless helpers
+├── pages/        # Route-level screens
+└── types/        # Shared API/domain contracts
 ```
 
-## Dashboard Flow
+### Access Model
 
-1. Browser meminta permission lokasi dan memulai `watchPosition`.
-2. Live marker diperbarui in-place; map tidak dibuat ulang setiap GPS update.
-3. Pengguna memilih origin/destination, mode, dan priority.
-4. Frontend POST ke `/api/v1/route-comparisons`.
-5. Rute digambar sebagai clickable PM2.5-colored segments.
-6. Klik garis memilih route option dan memperbarui summary.
-7. Weather layer menampilkan condition cards pada 25%, 50%, dan 75% selected route.
-8. Planner, Routes, Report, dan Layers tersedia sebagai mobile bottom navbar atau desktop control stack.
+| Route | Access |
+| --- | --- |
+| `/`, `/about`, `/vision-mission`, `/faq`, `/contact` | Public |
+| `/login`, `/register`, `/forgot-password` | Guest |
+| `/verify-otp`, `/new-password` | Recovery flow |
+| `/dashboard`, `/profile` | Authenticated |
 
-### Route colors
+---
 
-- Hijau: PM2.5 sample ≤15 µg/m³.
-- Kuning: PM2.5 sample 16–35 µg/m³.
-- Merah: PM2.5 sample >35 µg/m³.
+## ⚙️ Instalasi & Setup
 
-Warna segmen adalah context visual. Route selection tidak bergantung pada warna saja; line weight, opacity, cards, dan labels tetap tersedia.
+### Prerequisites
 
-## Route Preferences
+- Node.js 24 atau versi LTS modern yang didukung Vite 8.
+- npm.
+- Backend AERoute yang dapat diakses browser.
+- Google Maps browser key dengan HTTP-referrer restriction.
 
-- `Balanced`: memilih exposure terendah dalam batas 20% dari waktu rute tercepat.
-- `Sensitive-user mode` + Balanced: memperluas batas menjadi 35%.
-- `Lower exposure`: memilih route dengan estimated exposure terendah tanpa menggunakan time-window Balanced.
+### Instalasi
 
-## Community Reports
+```bash
+git clone https://github.com/AERoutee/AERoute-FE.git
+cd AERoute-FE
+npm ci
+copy .env.example .env
+npm run dev
+```
 
-- Kategori: hazard, blocked path, crash, construction, dan map issue.
-- Lokasi report ditangkap ketika report flow dimulai.
-- Deskripsi: 10–500 karakter.
-- Maksimal tiga gambar.
-- Maksimal 3 MB per gambar.
-- Format input: JPG, PNG, WebP.
-- Mobile mendukung rear-camera capture dan gallery.
-- Thumbnail dapat diklik untuk full-screen local preview sebelum submit.
-- Report markers dibaca berdasarkan viewport dan berlaku 24 jam.
-- Klik marker membuka Google Maps InfoWindow dengan detail dan gallery.
+### Environment
 
-## Authentication dan Recovery
+```env
+VITE_API_BASE_URL="http://localhost:3000"
+VITE_GOOGLE_MAPS_BROWSER_KEY="replace-with-browser-restricted-key"
+```
 
-- Better Auth menggunakan cookie session dari backend.
-- Guest guard mencegah user authenticated membuka login/register.
-- Auth guard melindungi dashboard/profile.
-- Recovery URL hanya memuat opaque `id`.
-- Email dan OTP tidak disimpan pada URL atau persistent browser storage.
-- New-password route membutuhkan OTP yang baru diverifikasi dalam navigation state; refresh memulai ulang flow.
+Semua variable `VITE_*` dikirim ke browser. Jangan menaruh database, SMTP, Better Auth secret, OAuth secret, atau server API key.
 
-## Responsive Behavior
+---
 
-- Public pages memakai layout full viewport dan mobile navigation menu.
-- Dashboard mobile memakai bottom sheets yang dapat di-snap dan di-dismiss dengan drag ke bawah.
-- Primary planner action tetap terlihat pada safe area bawah sheet.
-- Mobile map controls menjadi empat-item bottom navigation saat panel tertutup.
-- Desktop panels dapat dipindahkan dengan pointer dan keyboard.
+## 🚀 Penggunaan
 
-## Verification
+1. Jalankan frontend dan backend.
+2. Buka `http://localhost:5173`.
+3. Masuk atau buat akun.
+4. Izinkan browser location jika ingin live marker/report.
+5. Pilih origin, destination, mode, dan priority.
+6. Bandingkan dan klik route card atau garis pada map.
+7. Aktifkan Weather/Community Reports melalui Layers.
+8. Buat report menggunakan current location dan maksimal tiga foto.
 
-```powershell
+### Scripts
+
+```bash
+npm run dev
+npm run lint
+npm run typecheck
+npm run build
+npm run preview
+```
+
+---
+
+## 📚 API Documentation
+
+```text
+Development : http://localhost:3000
+Production  : https://api.aeroute.my.id
+Swagger UI : https://api.aeroute.my.id/api/docs
+OpenAPI JSON: https://api.aeroute.my.id/api/openapi.json
+```
+
+Frontend menggunakan cookie session dan `withCredentials`. API module berada di `src/api`; endpoint path berada di `src/constants/api.ts`.
+
+---
+
+## 🧪 Testing
+
+Automated frontend test suite belum tersedia.
+
+```bash
 npm run lint
 npm run typecheck
 npm run build
 ```
 
-Tidak ada test runner frontend pada repository ini. Validasi interaksi Google Maps, geolocation, camera capture, OAuth popup/redirect, dan responsive sheets tetap memerlukan QA browser manual.
+QA manual diperlukan untuk Google Maps rendering, geolocation permission, camera capture, OAuth callback, OTP email, mobile sheets, dan responsive layout.
 
+---
+
+## 📄 Lisensi
+
+Lisensi proyek belum ditetapkan. Tidak ada klaim lisensi MIT sampai file `LICENSE` resmi ditambahkan.
+
+---
+
+<div align="center">
+
+  **Made by AERoute Team for ITECHNO CUP 2026**
+
+</div>
