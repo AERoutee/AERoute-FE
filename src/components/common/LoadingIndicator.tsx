@@ -1,0 +1,3 @@
+export function LoadingIndicator() {
+  return <div className="fixed inset-0 z-[100] flex min-h-dvh items-center justify-center bg-white" role="status" aria-live="polite" aria-label="Loading..."><span className="inline-flex items-end gap-1 text-sm font-extrabold text-ae-brand">Loading<span className="mb-0.5 ml-1 size-1.5 animate-bounce rounded-full bg-ae-brand [animation-delay:-.2s]" aria-hidden="true" /><span className="mb-0.5 size-1.5 animate-bounce rounded-full bg-ae-brand [animation-delay:-.1s]" aria-hidden="true" /><span className="mb-0.5 size-1.5 animate-bounce rounded-full bg-ae-brand" aria-hidden="true" /></span></div>
+}
