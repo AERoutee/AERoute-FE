@@ -29,6 +29,7 @@ export type RouteOption = {
 export type WeatherConditions = {
   status: 'available'
   observedAt: string
+  forecastOffsetMinutes: number
   conditionType: string
   condition: string
   isDaytime: boolean
