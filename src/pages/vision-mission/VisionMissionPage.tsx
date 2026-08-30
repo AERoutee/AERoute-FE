@@ -28,7 +28,7 @@ export function VisionMissionPage() {
 
       <section className="relative z-10 px-5 py-20 sm:px-8 lg:px-12 lg:py-28" aria-labelledby="mission-title">
         <div className="mx-auto max-w-[90rem]">
-          <div className="max-w-[42rem]"><p className="mb-3 text-xs font-black tracking-[.16em] text-ae-brand uppercase">Arah misi</p><h2 className="m-0 text-4xl leading-[.98] font-black tracking-[-.055em] sm:text-6xl" id="mission-title">Tiga tonggak.<br /><span className="text-ae-brand">Satu tujuan bersama.</span></h2></div>
+          <div className="max-w-[42rem]"><h2 className="m-0 text-4xl leading-[.98] font-black tracking-[-.055em] sm:text-6xl" id="mission-title">Tiga tonggak.<br /><span className="text-ae-brand">Satu tujuan bersama.</span></h2></div>
           <div className="relative mt-16 grid gap-8 lg:mt-24 lg:grid-cols-3 lg:gap-10">
             <div className="absolute top-12 right-[15%] left-[15%] hidden h-1 bg-ae-soft lg:block" aria-hidden="true" />
             {missions.map(({ number, icon, title, description }, index) => <motion.article className="relative z-10 rounded-xl bg-white p-6 shadow-[0_20px_55px_rgba(20,41,34,.11)] sm:p-8" initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .35 }} transition={{ duration: .55, delay: index * .12 }} key={number}><div className="flex items-center justify-between"><ConceptBadge src={icon} size="lg" /><span className="text-sm font-black tracking-[.16em] text-ae-brand">{number}</span></div><h3 className="mt-9 mb-0 text-2xl font-black tracking-[-.035em]">{title}</h3><p className="mt-3 mb-0 text-base leading-7 font-semibold text-ae-muted">{description}</p></motion.article>)}
