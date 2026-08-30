@@ -31,6 +31,7 @@ module.exports = {
   collectCoverageFrom: [
     'src/api/**/*.ts',
     'src/config/api-client.ts',
+    'src/config/auth-client.ts',
     'src/constants/api.ts',
     'src/hooks/profile/*.ts',
     'src/hooks/route-comparison/*.ts',
