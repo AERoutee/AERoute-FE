@@ -1,7 +1,7 @@
 import { LoaderCircle, MapPinned, TriangleAlert } from 'lucide-react'
 import { memo, useEffect, useRef, useState } from 'react'
 import { hasGoogleMapsKey, loadGoogleMaps } from '@/config'
-import { roadReportIcons } from '@/lib'
+import { airQualityColor, roadReportIcons } from '@/lib'
 import type { Place, RoadReport, RoadReportBounds, RouteOption, WeatherConditions } from '@/types'
 
 type LiveLocation = { latitude: number; longitude: number; accuracy: number; heading: number; speed: number | null }
@@ -50,17 +50,11 @@ function routeColor(route: RouteOption) {
   return '#a83b24'
 }
 
-function pm25Color(value: number) {
-  if (value <= 15) return '#0a9b68'
-  if (value <= 35) return '#e6a51c'
-  return '#c0442b'
-}
-
 function coloredRouteSegments(path: google.maps.LatLngLiteral[], route: RouteOption) {
   if (path.length < 2 || !route.airQualitySamples?.length) return [{ path, color: routeColor(route) }]
   const colorAt = (point: google.maps.LatLngLiteral) => {
     const nearest = route.airQualitySamples.reduce((selected, sample) => distanceMeters(point, { lat: sample.latitude, lng: sample.longitude }) < distanceMeters(point, { lat: selected.latitude, lng: selected.longitude }) ? sample : selected)
-    return pm25Color(nearest.pm25)
+    return airQualityColor(nearest.pm25)
   }
   const segments: Array<{ path: google.maps.LatLngLiteral[]; color: string }> = []
   let color = colorAt(path[0])
