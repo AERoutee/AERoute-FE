@@ -5,6 +5,7 @@
   ### A clearer route for every breath.
 
   [![GitHub](https://img.shields.io/badge/GitHub-AERoute--FE-181717?style=for-the-badge&logo=github)](https://github.com/AERoutee/AERoute-FE)
+  [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
   **Submission for ITECHNO CUP 2026 - Web Development**
 
@@ -261,7 +262,7 @@ QA manual diperlukan untuk Google Maps rendering, geolocation permission, camera
 
 ## 📄 Lisensi
 
-Lisensi proyek belum ditetapkan. Tidak ada klaim lisensi MIT sampai file `LICENSE` resmi ditambahkan.
+Proyek ini dilisensikan di bawah [MIT License](LICENSE).
 
 ---
 
