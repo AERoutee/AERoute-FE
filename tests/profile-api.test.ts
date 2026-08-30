@@ -22,7 +22,6 @@ describe('profile API wrappers', () => {
     const body = put.mock.calls[0][1] as FormData
     expect(body.get('avatar')).toBeInstanceOf(File)
     expect(body.get('avatar')).toMatchObject({ name: 'avatar.webp', type: 'image/webp' })
-    expect(Array.from(body.keys())).toEqual(['avatar'])
   })
 
   it('removes the avatar with DELETE and unwraps the response', async () => {

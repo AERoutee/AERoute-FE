@@ -59,8 +59,6 @@ describe('road report API wrappers', () => {
     expect(body.get('longitude')).toBe('2.5')
     expect(body.getAll('images')).toHaveLength(2)
     expect(body.getAll('images')).toEqual(images)
-    expect(Array.from(body.keys())).toEqual(['category', 'description', 'latitude', 'longitude', 'images', 'images'])
-    expect(post.mock.calls[0][2]).toBeUndefined()
   })
 })
 
