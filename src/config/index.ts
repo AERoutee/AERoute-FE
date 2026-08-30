@@ -1,6 +1,7 @@
 export { authClient } from './auth-client'
 export { apiBaseURL, apiClient } from './api-client'
 export { loadGoogleMaps, loadGooglePlaces, hasGoogleMapsKey } from './google-maps'
+export { initializeMonitoring } from './monitoring'
 export { queryClient } from './react-query'
 export { appRoutes, notFoundRoute } from './routes'
 export type { AppRoute } from './routes'
