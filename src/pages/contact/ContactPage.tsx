@@ -70,11 +70,11 @@ export function ContactPage() {
     <main id="main-content" className="relative h-[calc(100svh-72px)] min-h-[40rem] overflow-hidden bg-white text-ae-ink" tabIndex={-1}>
       <div className="mx-auto h-full max-w-[90rem] px-5 pt-8 pb-60 sm:px-8 sm:pt-12 sm:pb-64 lg:px-12 lg:pt-16">
         <section className="relative z-10 max-w-[48rem]" aria-labelledby="contact-title">
-          <h1 className="m-0 text-[clamp(2.7rem,6vw,5.6rem)] leading-[.9] font-black tracking-[-.065em]" id="contact-title">Let’s make city journeys <span className="text-ae-brand">clearer.</span></h1>
-          <p className="mt-5 mb-0 max-w-[38rem] text-base leading-7 font-semibold text-ae-muted sm:text-lg sm:leading-8">Feedback, research collaboration, and partnership enquiries are welcome.</p>
+          <h1 className="m-0 text-[clamp(2.7rem,6vw,5.6rem)] leading-[.9] font-black tracking-[-.065em]" id="contact-title">Mari jadikan perjalanan kota <span className="text-ae-brand">lebih jelas.</span></h1>
+          <p className="mt-5 mb-0 max-w-[38rem] text-base leading-7 font-semibold text-ae-muted sm:text-lg sm:leading-8">Kami menyambut masukan, kolaborasi riset, dan pertanyaan kemitraan.</p>
           <div className="mt-6 grid max-w-[39rem] gap-3 min-[580px]:grid-cols-2">
             <div className="min-w-0 rounded-lg bg-white p-4 shadow-[0_14px_32px_rgba(20,41,34,.08)]"><img className="size-7 object-contain" src={colorEmailIcon} alt="" aria-hidden="true" /><span className="mt-3 block text-xs font-black uppercase tracking-[.1em] text-ae-muted">Email</span><a className="mt-1 block whitespace-nowrap text-sm font-black text-ae-ink underline decoration-ae-brand underline-offset-4" href="mailto:hello@aeroute.example">hello@aeroute.example</a></div>
-            <div className="rounded-lg bg-white p-4 shadow-[0_14px_32px_rgba(20,41,34,.08)]"><img className="size-7 object-contain" src={colorOfficeIcon} alt="" aria-hidden="true" /><span className="mt-3 block text-xs font-black uppercase tracking-[.1em] text-ae-muted">Based in</span><span className="mt-1 block text-sm font-black">Jakarta, Indonesia</span></div>
+            <div className="rounded-lg bg-white p-4 shadow-[0_14px_32px_rgba(20,41,34,.08)]"><img className="size-7 object-contain" src={colorOfficeIcon} alt="" aria-hidden="true" /><span className="mt-3 block text-xs font-black uppercase tracking-[.1em] text-ae-muted">Berbasis di</span><span className="mt-1 block text-sm font-black">Jakarta, Indonesia</span></div>
           </div>
         </section>
       </div>
