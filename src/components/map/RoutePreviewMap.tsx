@@ -23,6 +23,7 @@ type RoutePreviewMapProps = {
   onBoundsChange?: (bounds: RoadReportBounds) => void
   onReportSelect?: (report: RoadReport) => void
   onRouteSelect?: (routeId: string) => void
+  onMapReady?: (ready: boolean) => void
   showWeather?: boolean
   showReports?: boolean
   onWeatherAvailabilityChange?: (available: boolean) => void
@@ -216,7 +217,7 @@ function weatherCardIcon(weather: Extract<WeatherConditions, { status: 'availabl
   return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, size: new google.maps.Size(168, 72), scaledSize: new google.maps.Size(168, 72), anchor: new google.maps.Point(84, 90) }
 }
 
-function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId, liveLocation, followLiveLocation, reports = [], weatherPoints = emptyWeatherPoints, navigationRoute, onNavigationProgress, onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, showWeather = false, showReports = true, onWeatherAvailabilityChange }: RoutePreviewMapProps) {
+function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId, liveLocation, followLiveLocation, reports = [], weatherPoints = emptyWeatherPoints, navigationRoute, onNavigationProgress, onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, onMapReady, showWeather = false, showReports = true, onWeatherAvailabilityChange }: RoutePreviewMapProps) {
   const nodeRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<google.maps.Map | null>(null)
   const locationMarkerRef = useRef<google.maps.Marker | null>(null)
@@ -225,14 +226,15 @@ function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId
   const reportMarkers = useRef<google.maps.Marker[]>([])
   const reportInfoWindowRef = useRef<google.maps.InfoWindow | null>(null)
   const weatherMarkersRef = useRef<google.maps.Marker[]>([])
-  const callbacks = useRef({ onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, onNavigationProgress, onWeatherAvailabilityChange })
+  const callbacks = useRef({ onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, onMapReady, onNavigationProgress, onWeatherAvailabilityChange })
   const lastFitSignatureRef = useRef('')
   const [status, setStatus] = useState<'loading' | 'ready' | 'unavailable' | 'error'>(hasGoogleMapsKey() ? 'loading' : 'unavailable')
   const [mapVersion, setMapVersion] = useState(0)
 
-  useEffect(() => { callbacks.current = { onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, onNavigationProgress, onWeatherAvailabilityChange } }, [onBoundsChange, onDestinationChange, onNavigationProgress, onOriginChange, onReportSelect, onRouteSelect, onWeatherAvailabilityChange])
+  useEffect(() => { callbacks.current = { onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, onMapReady, onNavigationProgress, onWeatherAvailabilityChange } }, [onBoundsChange, onDestinationChange, onMapReady, onNavigationProgress, onOriginChange, onReportSelect, onRouteSelect, onWeatherAvailabilityChange])
 
   useEffect(() => {
+    callbacks.current.onMapReady?.(false)
     if (!hasGoogleMapsKey() || !nodeRef.current) return
     let active = true
     let idleListener: google.maps.MapsEventListener | undefined
@@ -249,8 +251,8 @@ function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId
         const northEast = bounds.getNorthEast(), southWest = bounds.getSouthWest()
         callbacks.current.onBoundsChange?.({ north: northEast.lat(), east: northEast.lng(), south: southWest.lat(), west: southWest.lng() })
       })
-      tilesLoadedListener = google.maps.event.addListenerOnce(map, 'tilesloaded', () => { window.clearTimeout(loadingTimeout); if (active) setStatus('ready') })
-      loadingTimeout = window.setTimeout(() => { if (active) setStatus('error') }, 12_000)
+      tilesLoadedListener = google.maps.event.addListenerOnce(map, 'tilesloaded', () => { window.clearTimeout(loadingTimeout); if (active) { setStatus('ready'); callbacks.current.onMapReady?.(true) } })
+      loadingTimeout = window.setTimeout(() => { if (active) { setStatus('error'); callbacks.current.onMapReady?.(false) } }, 12_000)
       let previousWidth = nodeRef.current.clientWidth
       let previousHeight = nodeRef.current.clientHeight
       resizeObserver = new ResizeObserver(([entry]) => {
@@ -265,7 +267,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId
       })
       resizeObserver.observe(nodeRef.current)
       setMapVersion((value) => value + 1)
-    }).catch(() => { if (active) setStatus('error') })
+    }).catch(() => { if (active) { setStatus('error'); callbacks.current.onMapReady?.(false) } })
     return () => { active = false; window.clearTimeout(loadingTimeout); idleListener?.remove(); tilesLoadedListener?.remove(); resizeObserver?.disconnect(); mapRef.current = null }
   }, [])
 
