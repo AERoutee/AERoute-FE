@@ -1,1 +1,1 @@
-export { removeProfileAvatar, uploadProfileAvatar } from './profile-queries'
+export { removeProfileAvatar, resolveProfileAvatarUrl, uploadProfileAvatar } from './profile-queries'

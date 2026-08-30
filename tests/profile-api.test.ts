@@ -1,7 +1,7 @@
 import { apiClient } from '@/config'
-import { removeProfileAvatar, uploadProfileAvatar } from '@/api/profile'
+import { removeProfileAvatar, resolveProfileAvatarUrl, uploadProfileAvatar } from '@/api/profile'
 
-jest.mock('@/config', () => ({ apiClient: { put: jest.fn(), delete: jest.fn() } }))
+jest.mock('@/config', () => ({ apiBaseURL: 'https://api.example.test', apiClient: { put: jest.fn(), delete: jest.fn() } }))
 
 const put = apiClient.put as jest.Mock
 const deleteRequest = apiClient.delete as jest.Mock
@@ -30,5 +30,20 @@ describe('profile API wrappers', () => {
 
     await expect(removeProfileAvatar()).resolves.toBe(data)
     expect(deleteRequest).toHaveBeenCalledWith('/api/v1/profile/avatar')
+  })
+})
+
+describe('profile avatar URL resolution', () => {
+  it.each([
+    ['/api/v1/profile/avatar/user-1?v=1', 'https://api.example.test/api/v1/profile/avatar/user-1?v=1'],
+    ['http://localhost:3000/api/v1/profile/avatar/user-1?v=2', 'https://api.example.test/api/v1/profile/avatar/user-1?v=2'],
+    ['https://accounts.google.com/avatar.png', 'https://accounts.google.com/avatar.png'],
+    ['https://cdn.example.test/avatar.webp', 'https://cdn.example.test/avatar.webp'],
+    ['not a URL', 'not a URL'],
+  ])('resolves %s', (value, expected) => expect(resolveProfileAvatarUrl(value)).toBe(expected))
+
+  it('preserves empty values', () => {
+    expect(resolveProfileAvatarUrl(null)).toBeNull()
+    expect(resolveProfileAvatarUrl(undefined)).toBeUndefined()
   })
 })

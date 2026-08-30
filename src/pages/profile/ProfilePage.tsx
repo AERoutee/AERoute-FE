@@ -1,6 +1,7 @@
 import { Camera, KeyRound, Pencil } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
+import { resolveProfileAvatarUrl } from '@/api/profile'
 import { authClient } from '@/config'
 import { useToast } from '@/context'
 import { useMutationRemoveProfileAvatar, useMutationUploadProfileAvatar } from '@/hooks/profile'
@@ -33,6 +34,7 @@ export function ProfilePage() {
   const [failedImage, setFailedImage] = useState<string | null>(null)
   const hasCredential = accounts.some((account) => account.providerId === 'credential')
   const isAvatarPending = uploadAvatar.isPending || removeAvatar.isPending
+  const avatarUrl = resolveProfileAvatarUrl(user?.image)
   const initials = user?.name?.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || user?.email?.[0]?.toUpperCase() || 'A'
 
   useEffect(() => {
@@ -64,8 +66,7 @@ export function ProfilePage() {
 
   async function saveAvatar(file: Blob) {
     try {
-      const { image } = await uploadAvatar.mutateAsync(file)
-      await authClient.updateUser({ image })
+      await uploadAvatar.mutateAsync(file)
       await session.refetch()
       setFailedImage(null)
       setCropSource('')
@@ -79,7 +80,6 @@ export function ProfilePage() {
     setIsAvatarMenuOpen(false)
     try {
       await removeAvatar.mutateAsync()
-      await authClient.updateUser({ image: null })
       await session.refetch()
       setFailedImage(null)
       showToast('Profile photo removed.', 'success')
@@ -151,7 +151,7 @@ export function ProfilePage() {
           <div className="shrink-0">
             <input className="sr-only" ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarFile} />
             <button className="group relative block size-20 overflow-hidden rounded-full focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-ae-brand" type="button" aria-label="Edit profile photo" onClick={() => setIsAvatarMenuOpen(true)}>
-              {user?.image && failedImage !== user.image ? <img className="size-20 rounded-full border-4 border-white object-cover shadow-[0_0_0_1px_#d5e0da,0_8px_20px_rgba(20,41,34,.14)]" src={user.image} alt="" referrerPolicy="no-referrer" onError={() => setFailedImage(user.image ?? null)} /> : <span className="grid size-20 place-items-center rounded-full bg-[linear-gradient(135deg,#087f5b,#12a66f)] text-xl font-black text-white shadow-lg" aria-hidden="true">{initials}</span>}
+              {avatarUrl && failedImage !== avatarUrl ? <img className="size-20 rounded-full border-4 border-white object-cover shadow-[0_0_0_1px_#d5e0da,0_8px_20px_rgba(20,41,34,.14)]" src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedImage(avatarUrl)} /> : <span className="grid size-20 place-items-center rounded-full bg-[linear-gradient(135deg,#087f5b,#12a66f)] text-xl font-black text-white shadow-lg" aria-hidden="true">{initials}</span>}
               <span className="absolute inset-0 grid place-items-center bg-ae-ink/65 text-white opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100"><span className="inline-flex flex-col items-center gap-1 text-[10px] font-black"><Camera className="size-5" aria-hidden="true" />Edit</span></span>
             </button>
           </div>

@@ -1,13 +1,15 @@
 import { LayoutDashboard, LogIn, LogOut, UserRound } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import { resolveProfileAvatarUrl } from '@/api/profile'
 import { ConfirmationDialog } from '@/components/common'
 import { authClient } from '@/config'
 import { useToast } from '@/context'
 
 function UserAvatar({ image, initials }: { image?: string | null; initials: string }) {
   const [failedImage, setFailedImage] = useState<string | null>(null)
-  if (image && failedImage !== image) return <img className="size-9 rounded-full object-cover" src={image} alt="" referrerPolicy="no-referrer" onError={() => setFailedImage(image)} />
+  const source = resolveProfileAvatarUrl(image)
+  if (source && failedImage !== source) return <img className="size-9 rounded-full object-cover" src={source} alt="" referrerPolicy="no-referrer" onError={() => setFailedImage(source)} />
   return <span className="grid size-9 place-items-center rounded-full bg-[linear-gradient(135deg,#087f5b,#12a66f)] text-xs font-black text-white" aria-hidden="true">{initials}</span>
 }
 
