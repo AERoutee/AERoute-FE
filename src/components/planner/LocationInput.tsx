@@ -65,7 +65,6 @@ export function LocationInput({ id, label, value, onChange, error }: LocationInp
       void google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
         input,
         sessionToken: sessionToken.current ?? undefined,
-        includedRegionCodes: ['id'],
         language: 'en',
         origin: { lat: -6.2088, lng: 106.8456 },
       }).then(({ suggestions: nextSuggestions }) => {
@@ -73,7 +72,7 @@ export function LocationInput({ id, label, value, onChange, error }: LocationInp
         setSuggestions(nextSuggestions.flatMap((suggestion) => {
           const prediction = suggestion.placePrediction
           if (!prediction) return []
-          return [{ id: prediction.placeId, label: prediction.mainText?.toString() ?? prediction.text.toString(), detail: prediction.secondaryText?.toString() ?? 'Indonesia', place: prediction.toPlace() }]
+          return [{ id: prediction.placeId, label: prediction.mainText?.toString() ?? prediction.text.toString(), detail: prediction.secondaryText?.toString() ?? 'Location', place: prediction.toPlace() }]
         }).slice(0, 6))
         setStatus('ready')
       }).catch(() => {
@@ -132,10 +131,10 @@ export function LocationInput({ id, label, value, onChange, error }: LocationInp
   return (
     <div className="relative" ref={containerRef}>
       <label className="mb-2 block text-sm font-extrabold [@media(min-width:1024px)_and_(max-height:900px)]:mb-1 [@media(min-width:1024px)_and_(max-height:760px)]:text-xs text-ae-ink" htmlFor={id}>{label}</label>
-      <div className={`flex min-h-14 items-center gap-3 rounded-xl [@media(min-width:1024px)_and_(max-height:900px)]:min-h-12 [@media(min-width:1024px)_and_(max-height:900px)]:gap-2 border bg-white px-4 transition ${error ? 'border-ae-fastest' : 'border-ae-line focus-within:border-ae-brand focus-within:ring-4 focus-within:ring-ae-brand/10'}`}>
+      <div className={`flex min-h-14 items-center gap-3 rounded-xl border bg-white px-4 transition [@media(min-width:1024px)_and_(max-height:900px)]:min-h-12 [@media(min-width:1024px)_and_(max-height:900px)]:gap-2 ${error ? 'border-ae-fastest' : 'border-ae-line focus-within:border-ae-brand focus-within:ring-4 focus-within:ring-ae-brand/10'}`}>
         {status === 'loading' ? <LoaderCircle className="size-5 shrink-0 animate-spin text-ae-brand" aria-hidden="true" /> : <Search className="size-5 shrink-0 text-ae-brand" aria-hidden="true" />}
-        <input className="min-w-0 flex-1 border-0 bg-transparent py-3 font-bold text-ae-ink [@media(min-width:1024px)_and_(max-height:900px)]:py-2 [@media(min-width:1024px)_and_(max-height:760px)]:text-sm outline-none placeholder:text-ae-muted/75" id={id} role="combobox" aria-autocomplete="list" aria-controls={listId} aria-expanded={open && suggestions.length > 0} aria-activedescendant={activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined} aria-invalid={Boolean(error)} aria-describedby={describedBy} value={query} onChange={(event) => updateQuery(event.target.value)} onKeyDown={handleKeyDown} onFocus={() => setOpen(true)} placeholder="Search an address or place" autoComplete="off" />
-        {query && <button className="grid size-9 place-items-center rounded-lg text-ae-muted hover:bg-ae-soft" type="button" aria-label={`Clear ${label.toLowerCase()}`} onClick={() => { requestId.current += 1; setQuery(''); setSuggestions([]); setStatus('ready'); onChange(null); setOpen(false) }}><X className="size-4" aria-hidden="true" /></button>}
+        <input className="min-w-0 flex-1 border-0 bg-transparent py-3 text-base font-bold text-ae-ink outline-none placeholder:text-ae-muted/75 [@media(min-width:1024px)_and_(max-height:900px)]:py-2 [@media(min-width:1024px)_and_(max-height:760px)]:text-sm" id={id} role="combobox" aria-autocomplete="list" aria-controls={listId} aria-expanded={open && suggestions.length > 0} aria-activedescendant={activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined} aria-invalid={Boolean(error)} aria-describedby={describedBy} value={query} onChange={(event) => updateQuery(event.target.value)} onKeyDown={handleKeyDown} onFocus={() => setOpen(true)} placeholder="Search an address or place" autoComplete="off" />
+        {query && <button className="grid size-11 shrink-0 place-items-center rounded-lg text-ae-muted hover:bg-ae-soft" type="button" aria-label={`Clear ${label.toLowerCase()}`} onClick={() => { requestId.current += 1; setQuery(''); setSuggestions([]); setStatus('ready'); onChange(null); setOpen(false) }}><X className="size-4" aria-hidden="true" /></button>}
       </div>
       {error && <p className="mt-2 text-sm font-bold text-ae-fastest" id={errorId} role="alert">{error}</p>}
       {(status === 'unavailable' || status === 'error') && <p className="mt-2 text-sm font-semibold text-ae-fastest" id={statusId} role="status">Location search is unavailable.</p>}
