@@ -47,7 +47,8 @@ function decodePolyline(encoded: string) {
 function routeColor(route: RouteOption) {
   if (route.labels.includes('RECOMMENDED')) return '#087f5b'
   if (route.labels.includes('LOWEST_EXPOSURE')) return '#2457a7'
-  return '#a83b24'
+  if (route.labels.includes('FASTEST')) return '#a83b24'
+  return '#4f6159'
 }
 
 function coloredRouteSegments(path: google.maps.LatLngLiteral[], route: RouteOption) {
@@ -222,6 +223,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId
   const reportInfoWindowRef = useRef<google.maps.InfoWindow | null>(null)
   const weatherMarkersRef = useRef<google.maps.Marker[]>([])
   const callbacks = useRef({ onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onRouteSelect, onMapReady, onNavigationProgress, onWeatherAvailabilityChange })
+  const initialLocationCameraMapRef = useRef<google.maps.Map | null>(null)
   const lastFitSignatureRef = useRef('')
   const [status, setStatus] = useState<'loading' | 'ready' | 'unavailable' | 'error'>(hasGoogleMapsKey() ? 'loading' : 'unavailable')
   const [mapVersion, setMapVersion] = useState(0)
@@ -309,8 +311,12 @@ function RoutePreviewMapComponent({ origin, destination, routes = [], selectedId
     else { locationMarkerRef.current.setPosition(position); locationMarkerRef.current.setIcon(liveLocationIcon(heading)) }
     if (!accuracyCircleRef.current) accuracyCircleRef.current = new google.maps.Circle({ map, center: rawPosition, radius: liveLocation.accuracy, strokeColor: '#087f5b', strokeOpacity: .35, strokeWeight: 1, fillColor: '#087f5b', fillOpacity: .08, clickable: false })
     else { accuracyCircleRef.current.setCenter(rawPosition); accuracyCircleRef.current.setRadius(liveLocation.accuracy) }
+    if (initialLocationCameraMapRef.current !== map) {
+      initialLocationCameraMapRef.current = map
+      if (!origin && !destination && routes.length === 0 && !followLiveLocation) map.setCenter(rawPosition)
+    }
     if (followLiveLocation) { map.panTo(position); if (navigationRoute && (map.getZoom() ?? 0) < 17) map.setZoom(17) }
-  }, [followLiveLocation, liveLocation, mapVersion, navigationRoute])
+  }, [destination, followLiveLocation, liveLocation, mapVersion, navigationRoute, origin, routes])
 
   useEffect(() => {
     const map = mapRef.current
