@@ -114,6 +114,10 @@ export default function DashboardPage() {
        setIsRoutesOpen(true)
       setActiveMobilePanel('routes')
       mobileSheet.setHeight(55)
+    }, onError: () => {
+      setIsRoutesOpen(true)
+      setActiveMobilePanel('routes')
+      mobileSheet.setHeight(55)
     } })
   }
 

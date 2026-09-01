@@ -5,10 +5,12 @@ import type { ApiErrorResponse, ApiResponse, PlannerRequest, RouteComparison } f
 
 export class ApiError extends Error {
   readonly code: string
+  readonly retryable: boolean
 
-  constructor(code: string, message: string) {
+  constructor(code: string, message: string, retryable = true) {
     super(message)
     this.code = code
+    this.retryable = retryable
   }
 }
 
@@ -24,7 +26,7 @@ export async function compareRoutes(request: PlannerRequest, signal?: AbortSigna
     return response.data.data
   } catch (error) {
     if (axios.isAxiosError<ApiErrorResponse>(error)) {
-      throw new ApiError(error.response?.data.error.code ?? 'request_failed', error.response?.data.error.message ?? 'Route comparison failed.')
+      throw new ApiError(error.response?.data.error.code ?? 'request_failed', error.response?.data.error.message ?? 'Route comparison failed.', error.response?.data.error.retryable ?? true)
     }
     throw error
   }

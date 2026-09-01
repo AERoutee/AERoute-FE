@@ -43,18 +43,18 @@ describe('compareRoutes', () => {
   })
 
   it('maps structured Axios errors to ApiError', async () => {
-    const error = { response: { data: { error: { code: 'NO_ROUTE', message: 'No route found' } } } }
+    const error = { response: { data: { error: { code: 'NO_ROUTE', message: 'No route found', retryable: false } } } }
     isAxiosError.mockReturnValue(true)
     post.mockRejectedValue(error)
 
-    await expect(compareRoutes(request)).rejects.toEqual(new ApiError('NO_ROUTE', 'No route found'))
+    await expect(compareRoutes(request)).rejects.toEqual(new ApiError('NO_ROUTE', 'No route found', false))
   })
 
   it('uses default Axios error values when the response is incomplete', async () => {
     isAxiosError.mockReturnValue(true)
     post.mockRejectedValue({ response: undefined })
 
-    await expect(compareRoutes(request)).rejects.toEqual(new ApiError('request_failed', 'Route comparison failed.'))
+    await expect(compareRoutes(request)).rejects.toEqual(new ApiError('request_failed', 'Route comparison failed.', true))
   })
 
   it('rethrows non-Axios errors unchanged', async () => {
