@@ -8,6 +8,7 @@ import { ConfirmationDialog } from '@/components/common'
 import { useToast } from '@/context'
 import { useDraggablePanel, useMobileSheet, useMutationCreateRouteComparison, useRecordTripImpact } from '@/hooks'
 import { canStartNavigationFrom, getApiErrorMessage, hazardReportIds, initialRouteView, itineraryModeRequests, isArrivalFix, loadMapLayers, routeGuidanceEligibility, routeViews, saveMapLayers, savedCommuteRequest, savedCommuteSelectedModes, selectedModeLabel, shouldTriggerOffRouteReroute, transitStops, type OriginSource } from '@/lib'
+import { GUIDANCE_FIX_MAX_AGE_MS } from '@/lib/navigation-reroute'
 import { saveRouteSummary } from '@/lib/route-summary'
 import type { AccessibilityMode, DirectTravelMode, LiveLocation, Place, RoadReport, RoadReportBounds, RouteComparisonOutcome, RouteComparisonTask, RouteOption, RoutePreference, RouteTaskId, SavedCommute, TransitPreference } from '@/types'
 import { MapLayerControl, PlannerPanel, RoadReportDetailPanel, RoadReportSheet, RouteResultsPanel } from './components'
@@ -255,8 +256,8 @@ export default function DashboardPage() {
     return () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); window.clearTimeout(hazardRetryTimerRef.current); abortComparisonRef.current(); rerouteControllerRef.current?.abort() }
   }, [updateLiveLocation])
   useEffect(() => {
-    if (!liveLocation || guidanceNow - liveLocation.timestamp > 15_000) return
-    const timer = window.setTimeout(() => setGuidanceNow(currentTime()), Math.max(0, liveLocation.timestamp + 15_001 - guidanceNow))
+    if (!liveLocation || guidanceNow - liveLocation.timestamp > GUIDANCE_FIX_MAX_AGE_MS) return
+    const timer = window.setTimeout(() => setGuidanceNow(currentTime()), Math.max(0, liveLocation.timestamp + GUIDANCE_FIX_MAX_AGE_MS + 1 - guidanceNow))
     return () => window.clearTimeout(timer)
   }, [guidanceNow, liveLocation])
   useEffect(() => {
@@ -339,6 +340,7 @@ export default function DashboardPage() {
   }
 
   function startNavigation() {
+    if (liveLocation && beginNavigation(liveLocation)) return
     if (!navigator.geolocation || originSource !== 'CURRENT_LOCATION' || isNavigationLocationPending) return
     setIsNavigationLocationPending(true)
     navigator.geolocation.getCurrentPosition((position) => {

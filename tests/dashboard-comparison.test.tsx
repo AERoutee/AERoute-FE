@@ -214,7 +214,7 @@ describe('Dashboard comparison groups', () => {
     expect(screen.getByLabelText('live fix')).toHaveTextContent('"accuracy":10')
   })
 
-  it('expires guidance at 15 seconds with one timeout and rechecks road-report location freshness', () => {
+  it('expires guidance after ten minutes and rechecks road-report location freshness', () => {
     jest.useFakeTimers()
     const timestamp = Date.now()
     getCurrentPosition.mockImplementation((success: PositionCallback) => success({ timestamp, coords: { latitude: 1, longitude: 2, accuracy: 12, heading: null, speed: null } } as GeolocationPosition))
@@ -227,14 +227,14 @@ describe('Dashboard comparison groups', () => {
     const tasks = mutate.mock.calls.at(-1)![0] as RouteComparisonTask[]
     act(() => mutate.mock.calls.at(-1)![1].onSuccess([taskOutcome(tasks[0], 'walk')]))
     expect(screen.getByLabelText('guidance eligible')).toHaveTextContent('true')
-    act(() => jest.advanceTimersByTime(15_001))
+    act(() => jest.advanceTimersByTime(600_001))
     expect(screen.getByLabelText('guidance message')).toHaveTextContent('Lokasi presisi akan diperiksa saat navigasi dimulai.')
     fireEvent.click(screen.getByRole('button', { name: 'Lapor' }))
     expect(getCurrentPosition).toHaveBeenCalledTimes(2)
     jest.useRealTimers()
   })
 
-  it('refreshes a stale fix when navigation starts instead of leaving the action blocked', () => {
+  it('starts from the last accurate nearby fix without forcing another GPS request', () => {
     jest.useFakeTimers()
     const firstTimestamp = Date.now()
     let locationRequests = 0
@@ -251,11 +251,11 @@ describe('Dashboard comparison groups', () => {
     const tasks = mutate.mock.calls.at(-1)![0] as RouteComparisonTask[]
     act(() => mutate.mock.calls.at(-1)![1].onSuccess([taskOutcome(tasks[0], 'walk')]))
     act(() => jest.advanceTimersByTime(15_001))
-    expect(screen.getByLabelText('guidance message')).toHaveTextContent('Lokasi presisi akan diperiksa saat navigasi dimulai.')
+    expect(screen.getByLabelText('guidance message')).toHaveTextContent('Lokasi saat ini siap di titik awal rute.')
 
     fireEvent.click(screen.getByRole('button', { name: 'Start test guidance' }))
 
-    expect(getCurrentPosition).toHaveBeenCalledTimes(2)
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: 'Hentikan navigasi' })).toBeInTheDocument()
     jest.useRealTimers()
   })

@@ -1,6 +1,7 @@
 import type { RoadReport, RouteOption } from '@/types'
 
 const ACCURATE_FIX_METERS = 50
+export const GUIDANCE_FIX_MAX_AGE_MS = 10 * 60_000
 const REROUTE_COOLDOWN_MS = 120_000
 const REPORT_ROUTE_DISTANCE_METERS = 100
 
@@ -15,7 +16,7 @@ export function routeGuidanceEligibility(origin: { latitude: number; longitude: 
   if (source === 'OTHER') return { eligible: false, code: 'ORIGIN_NOT_CURRENT_LOCATION', message: 'Gunakan lokasi saat ini sebagai titik awal untuk memulai navigasi.' }
   if (!fix) return { eligible: false, code: 'NO_FIX', message: 'Lokasi langsung tidak tersedia. Gunakan lokasi saat ini atau izinkan lokasi presisi.' }
   if (!Number.isFinite(fix.accuracy) || fix.accuracy < 0 || fix.accuracy > 100) return { eligible: false, code: 'INACCURATE_FIX', message: 'Akurasi lokasi harus berada dalam radius 100 m.' }
-  if (!Number.isFinite(fix.timestamp) || now - fix.timestamp > 15_000) return { eligible: false, code: 'STALE_FIX', message: 'Lokasi sudah kedaluwarsa. Tunggu pembaruan lokasi.' }
+  if (!Number.isFinite(fix.timestamp) || now - fix.timestamp > GUIDANCE_FIX_MAX_AGE_MS) return { eligible: false, code: 'STALE_FIX', message: 'Lokasi sudah kedaluwarsa. Tunggu pembaruan lokasi.' }
   if (distanceMeters(origin, fix) > 150) return { eligible: false, code: 'TOO_FAR', message: 'Bergeraklah hingga berjarak maksimal 150 m dari titik awal rute.' }
   return { eligible: true, code: 'ELIGIBLE', message: 'Lokasi saat ini siap di titik awal rute.' }
 }
