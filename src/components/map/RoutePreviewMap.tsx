@@ -118,6 +118,11 @@ function reportIcon(category: RoadReport['category']) {
   return { url: roadReportIcons[category], size: new google.maps.Size(56, 56), scaledSize: new google.maps.Size(56, 56), anchor: new google.maps.Point(28, 48) }
 }
 
+function restStopIcon() {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="56" viewBox="0 0 48 56"><defs><filter id="s" x="-50%" y="-40%" width="200%" height="210%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#142922" flood-opacity=".3"/></filter></defs><g filter="url(#s)"><path d="M24 2C12.4 2 4 10.4 4 22c0 14.7 20 32 20 32s20-17.3 20-32C44 10.4 35.6 2 24 2z" fill="#087f5b" stroke="#fff" stroke-width="3"/><circle cx="24" cy="22" r="13" fill="#fff"/></g><path d="M17 17h13v8a5 5 0 0 1-5 5h-3a5 5 0 0 1-5-5v-8zm13 2h2a3 3 0 0 1 0 6h-2M16 31h17" fill="none" stroke="#087f5b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, size: new google.maps.Size(48, 56), scaledSize: new google.maps.Size(48, 56), anchor: new google.maps.Point(24, 54) }
+}
+
 const transitIconUrls = {
   bus: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="21" fill="#1769e0"/><path d="M14 12h18c2 0 3 2 3 4v15h-3v4h-4v-4H18v4h-4v-4h-3V16c0-2 1-4 3-4zm1 5v7h16v-7H15zm2 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" fill="white"/></svg>')}`,
   subway: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="21" fill="#7c3aed"/><path d="M15 10h16c3 0 5 3 5 6v12c0 3-2 5-5 5l3 4h-5l-3-4h-6l-3 4h-5l3-4c-3 0-5-2-5-5V16c0-3 2-6 5-6zm0 7v8h16v-8H15zm3 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" fill="white"/></svg>')}`,
@@ -786,7 +791,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     placeMarkersRef.current = restStopCandidates.flatMap((place) => {
       const accessible = Boolean(place.accessibility && Object.values(place.accessibility).some((value) => value === true))
       if (!(showRestStops || showAccessiblePlaces && accessible)) return []
-      const marker = new google.maps.Marker({ map, position: { lat: place.location.latitude, lng: place.location.longitude }, title: accessible ? `${place.name}: rest-stop candidate with accessibility information` : `${place.name}: rest-stop candidate`, zIndex: 5, optimized: false })
+      const marker = new google.maps.Marker({ map, position: { lat: place.location.latitude, lng: place.location.longitude }, icon: restStopIcon(), title: accessible ? `${place.name}: rest-stop candidate with accessibility information` : `${place.name}: rest-stop candidate`, zIndex: 5, optimized: false })
       marker.addListener('click', () => {
         dismissPopupPeers('place')
         closePlacePopup()

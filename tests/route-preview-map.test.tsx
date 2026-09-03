@@ -277,7 +277,7 @@ describe('RoutePreviewMap initial camera', () => {
     expect(css).toContain('@media (max-width: 30rem)')
   })
 
-  it('uses unnumbered standard markers for every rest stop and structured facility icons', async () => {
+  it('uses unnumbered branded rest-stop markers and structured facility icons', async () => {
     const candidates = [
       { id: 'positive', name: 'Park', formattedAddress: 'Main Street', openNow: true, restroom: false, location: { latitude: -6.2, longitude: 106.8 }, types: ['park'], accessibility: { wheelchairAccessibleEntrance: true, wheelchairAccessibleParking: true, wheelchairAccessibleRestroom: true, wheelchairAccessibleSeating: true }, safetyVerified: false as const },
       { id: 'unknown', name: 'Cafe', location: { latitude: -6.21, longitude: 106.81 }, types: ['cafe'], safetyVerified: false as const },
@@ -286,7 +286,8 @@ describe('RoutePreviewMap initial camera', () => {
     await finishMapLoad()
     const Marker = google.maps.Marker as unknown as jest.Mock
     await waitFor(() => expect(Marker.mock.calls).toHaveLength(2))
-    expect(Marker.mock.calls.map(([options]) => options.icon)).toEqual([undefined, undefined])
+    expect(Marker.mock.calls.map(([options]) => options.icon.url).every((url) => url.startsWith('data:image/svg+xml'))).toBe(true)
+    expect(Marker.mock.calls.map(([options]) => decodeURIComponent(options.icon.url)).every((url) => url.includes('#087f5b'))).toBe(true)
     expect(Marker.mock.calls.map(([options]) => options.label)).toEqual([undefined, undefined])
 
     markerListeners[0].click()
