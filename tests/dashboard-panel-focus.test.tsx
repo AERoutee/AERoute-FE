@@ -27,8 +27,8 @@ beforeEach(() => jest.clearAllMocks())
 
 describe('dashboard panel focus management', () => {
   it.each([
-    ['Planner', 'planner-panel', 'Close planner', 'Where are you going?'],
-    ['Routes', 'routes-panel', 'Close route options', 'Route options'],
+    ['Rencana', 'planner-panel', 'Close planner', 'Where are you going?'],
+    ['Rute', 'routes-panel', 'Close route options', 'Route options'],
   ])('opens and closes the %s panel with ARIA state and focus restoration', async (triggerName, panelId, closeName, headingName) => {
     render(<DashboardPage />)
     await userEvent.click(screen.getByRole('button', { name: 'Enable map' }))

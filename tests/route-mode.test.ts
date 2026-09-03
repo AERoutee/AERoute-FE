@@ -4,12 +4,12 @@ import { plannerRequest, routeComparison, routeOption } from './route-fixtures'
 
 describe('single-itinerary mode data', () => {
   it.each([
-    [['WALK'], { mode: 'WALK', label: 'Walk' }],
-    [['BICYCLE'], { mode: 'BICYCLE', label: 'Cycle' }],
+    [['WALK'], { mode: 'WALK', label: 'Jalan' }],
+    [['BICYCLE'], { mode: 'BICYCLE', label: 'Sepeda' }],
     [['BUS'], { mode: 'TRANSIT', transitModes: ['BUS'], label: 'Bus' }],
-    [['WALK', 'BUS'], { mode: 'TRANSIT', transitModes: ['BUS'], label: 'Walk + Bus' }],
-    [['BUS', 'TRAIN'], { mode: 'TRANSIT', transitModes: ['BUS', 'TRAIN'], label: 'Bus + Train' }],
-    [['TRAIN', 'SUBWAY'], { mode: 'TRANSIT', transitModes: ['TRAIN', 'SUBWAY'], label: 'Train + Subway' }],
+    [['WALK', 'BUS'], { mode: 'TRANSIT', transitModes: ['BUS'], label: 'Jalan + Bus' }],
+    [['BUS', 'TRAIN'], { mode: 'TRANSIT', transitModes: ['BUS', 'TRAIN'], label: 'Bus + Kereta' }],
+    [['TRAIN', 'SUBWAY'], { mode: 'TRANSIT', transitModes: ['TRAIN', 'SUBWAY'], label: 'Kereta + MRT' }],
   ] as const)('maps %j to one request', (modes, expected) => {
     expect(itineraryModeRequest(modes)).toEqual(expected)
   })
@@ -28,23 +28,23 @@ describe('single-itinerary mode data', () => {
     const common = { origin: plannerRequest('WALK').origin, destination: plannerRequest('WALK').destination, preference: 'lower-exposure' as const, sensitiveUser: true, transitPreference: 'FEWER_TRANSFERS' as const, accessibilityMode: 'REDUCED_EXERTION' as const, departureOffsetsMinutes: [0, 30, 60] as Array<0 | 30 | 60>, hazardPolicy: 'PREFER_FEWER_REPORTS' as const, includeRestStops: true }
     const { transitPreference: _transitPreference, ...activeCommon } = common
     expect(itineraryModeRequests(['BICYCLE', 'WALK'], common)).toEqual([
-      { id: 'WALK', label: 'Walk', selectedModes: ['WALK'], request: { ...activeCommon, mode: 'WALK' } },
-      { id: 'BICYCLE', label: 'Cycle', selectedModes: ['BICYCLE'], request: { ...activeCommon, mode: 'BICYCLE' } },
+      { id: 'WALK', label: 'Jalan', selectedModes: ['WALK'], request: { ...activeCommon, mode: 'WALK' } },
+      { id: 'BICYCLE', label: 'Sepeda', selectedModes: ['BICYCLE'], request: { ...activeCommon, mode: 'BICYCLE' } },
     ])
     expect(itineraryModeRequests(['WALK', 'BUS'], common)).toEqual([
-      { id: 'TRANSIT', label: 'Walk + Bus', selectedModes: ['WALK', 'BUS'], request: { ...common, mode: 'TRANSIT', transitModes: ['BUS'], transitPreference: 'FEWER_TRANSFERS' } },
+      { id: 'TRANSIT', label: 'Jalan + Bus', selectedModes: ['WALK', 'BUS'], request: { ...common, mode: 'TRANSIT', transitModes: ['BUS'], transitPreference: 'FEWER_TRANSFERS' } },
     ])
     expect(itineraryModeRequests(['WALK', 'BUS', 'TRAIN'], common)).toEqual([
-      { id: 'TRANSIT', label: 'Walk + Bus + Train', selectedModes: ['WALK', 'BUS', 'TRAIN'], request: { ...common, mode: 'TRANSIT', transitModes: ['BUS', 'TRAIN'], transitPreference: 'FEWER_TRANSFERS' } },
+      { id: 'TRANSIT', label: 'Jalan + Bus + Kereta', selectedModes: ['WALK', 'BUS', 'TRAIN'], request: { ...common, mode: 'TRANSIT', transitModes: ['BUS', 'TRAIN'], transitPreference: 'FEWER_TRANSFERS' } },
     ])
     expect(itineraryModeRequests(['WALK'], common)[0].request.includeRestStops).toBe(true)
     expect(itineraryModeRequests(['WALK', 'BICYCLE', 'TRAIN'], common)).toEqual([
-      { id: 'BIKE_TRANSIT', label: 'Cycle + Train + Walk', selectedModes: ['WALK', 'BICYCLE', 'TRAIN'], request: { ...common, mode: 'TRANSIT', transitModes: ['TRAIN'], accessPlan: { firstMileMode: 'BICYCLE', lastMileMode: 'WALK', bicyclePlan: 'PARK_AT_FIRST_TRANSIT_STOP' }, departureOffsetsMinutes: [0], includeRestStops: false } },
-      { id: 'TRANSIT_FALLBACK', label: 'Train', selectedModes: ['TRAIN'], request: { ...common, mode: 'TRANSIT', transitModes: ['TRAIN'] } },
+      { id: 'BIKE_TRANSIT', label: 'Sepeda + Kereta + Jalan', selectedModes: ['WALK', 'BICYCLE', 'TRAIN'], request: { ...common, mode: 'TRANSIT', transitModes: ['TRAIN'], accessPlan: { firstMileMode: 'BICYCLE', lastMileMode: 'WALK', bicyclePlan: 'PARK_AT_FIRST_TRANSIT_STOP' }, departureOffsetsMinutes: [0], includeRestStops: false } },
+      { id: 'TRANSIT_FALLBACK', label: 'Kereta', selectedModes: ['TRAIN'], request: { ...common, mode: 'TRANSIT', transitModes: ['TRAIN'] } },
     ])
     expect(itineraryModeRequests(['BICYCLE', 'BUS', 'TRAIN'], common).map(({ id, label }) => ({ id, label }))).toEqual([
-      { id: 'BIKE_TRANSIT', label: 'Cycle + Bus + Train' },
-      { id: 'TRANSIT_FALLBACK', label: 'Bus + Train' },
+      { id: 'BIKE_TRANSIT', label: 'Sepeda + Bus + Kereta' },
+      { id: 'TRANSIT_FALLBACK', label: 'Bus + Kereta' },
     ])
   })
 
@@ -62,7 +62,7 @@ describe('single-itinerary mode data', () => {
     const request = { ...plannerRequest('BUS'), transitModes: ['BUS' as const], transitPreference: 'FEWER_TRANSFERS' as const }
     const views = routeViews('TRANSIT', ['WALK', 'BUS'], request, comparison)
     expect(views.map((view) => view.key)).toEqual(['TRANSIT:transit:alt', 'TRANSIT:transit:recommended'])
-    expect(views[0].modeLabel).toBe('Walk + Bus')
+    expect(views[0].modeLabel).toBe('Jalan + Bus')
     expect(savedCommuteInput(views[0])).toMatchObject({ mode: 'TRANSIT', transitModes: ['BUS'], transitPreference: 'FEWER_TRANSFERS' })
     expect(savedCommuteInput(views[0])).not.toHaveProperty('selectedModes')
   })
@@ -132,7 +132,7 @@ describe('single-itinerary mode data', () => {
       { name: 'Central', location: { latitude: 1, longitude: 2 }, ordinal: 1, role: 'departure', vehicleType: 'TRAIN', line: 'R03A', label: 'T1' },
       { name: 'Park', location: { latitude: 3, longitude: 4 }, ordinal: 2, role: 'arrival', vehicleType: 'TRAIN', line: 'R03A', label: 'T2' },
     ])
-    expect(selectedModeLabel(['WALK', 'BUS'])).toBe('Walk + Bus')
-    expect(selectedModeLabel(['BUS', 'WALK'])).toBe('Walk + Bus')
+    expect(selectedModeLabel(['WALK', 'BUS'])).toBe('Jalan + Bus')
+    expect(selectedModeLabel(['BUS', 'WALK'])).toBe('Jalan + Bus')
   })
 })

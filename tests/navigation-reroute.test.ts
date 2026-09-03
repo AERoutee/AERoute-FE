@@ -20,12 +20,12 @@ describe('navigation reroute decisions', () => {
     const now = 1_000_000
     const place = { latitude: -6.2, longitude: 106.8 }
     const currentLocation: OriginSource = 'CURRENT_LOCATION'
-    expect(routeGuidanceEligibility(place, 'OTHER', { ...place, accuracy: 20, timestamp: now }, now)).toEqual({ eligible: false, code: 'ORIGIN_NOT_CURRENT_LOCATION', message: 'Use current location as the route origin to start guidance.' })
-    expect(routeGuidanceEligibility(place, currentLocation, null, now)).toEqual({ eligible: false, code: 'NO_FIX', message: 'Live location is unavailable. Use current location or allow precise location.' })
-    expect(routeGuidanceEligibility(place, currentLocation, { ...place, accuracy: 80, timestamp: now - 15_001 }, now)).toEqual({ eligible: false, code: 'STALE_FIX', message: 'Live location is stale. Wait for a fresh location fix.' })
-    expect(routeGuidanceEligibility(place, currentLocation, { ...place, accuracy: 100.01, timestamp: now }, now)).toEqual({ eligible: false, code: 'INACCURATE_FIX', message: 'Live location accuracy must be within 100 m.' })
-    expect(routeGuidanceEligibility(place, currentLocation, { latitude: -6.19864, longitude: 106.8, accuracy: 20, timestamp: now }, now)).toEqual({ eligible: false, code: 'TOO_FAR', message: 'Move within 150 m of the route start.' })
-    expect(routeGuidanceEligibility(place, currentLocation, { ...place, accuracy: 100, timestamp: now - 15_000 }, now)).toEqual({ eligible: true, code: 'ELIGIBLE', message: 'Live location is ready at the route start.' })
+    expect(routeGuidanceEligibility(place, 'OTHER', { ...place, accuracy: 20, timestamp: now }, now)).toEqual({ eligible: false, code: 'ORIGIN_NOT_CURRENT_LOCATION', message: 'Gunakan lokasi saat ini sebagai titik awal untuk memulai navigasi.' })
+    expect(routeGuidanceEligibility(place, currentLocation, null, now)).toEqual({ eligible: false, code: 'NO_FIX', message: 'Lokasi langsung tidak tersedia. Gunakan lokasi saat ini atau izinkan lokasi presisi.' })
+    expect(routeGuidanceEligibility(place, currentLocation, { ...place, accuracy: 80, timestamp: now - 15_001 }, now)).toEqual({ eligible: false, code: 'STALE_FIX', message: 'Lokasi sudah kedaluwarsa. Tunggu pembaruan lokasi.' })
+    expect(routeGuidanceEligibility(place, currentLocation, { ...place, accuracy: 100.01, timestamp: now }, now)).toEqual({ eligible: false, code: 'INACCURATE_FIX', message: 'Akurasi lokasi harus berada dalam radius 100 m.' })
+    expect(routeGuidanceEligibility(place, currentLocation, { latitude: -6.19864, longitude: 106.8, accuracy: 20, timestamp: now }, now)).toEqual({ eligible: false, code: 'TOO_FAR', message: 'Bergeraklah hingga berjarak maksimal 150 m dari titik awal rute.' })
+    expect(routeGuidanceEligibility(place, currentLocation, { ...place, accuracy: 100, timestamp: now - 15_000 }, now)).toEqual({ eligible: true, code: 'ELIGIBLE', message: 'Lokasi saat ini siap di titik awal rute.' })
     expect(canStartNavigationFrom(place, currentLocation, { ...place, accuracy: 100, timestamp: now - 15_000 }, now)).toBe(true)
     expect(canStartNavigationFrom(place, 'OTHER', { ...place, accuracy: 20, timestamp: now }, now)).toBe(false)
     expect(isArrivalFix(place, { ...place, accuracy: 25, timestamp: now })).toBe(true)

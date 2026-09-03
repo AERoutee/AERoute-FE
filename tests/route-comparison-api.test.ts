@@ -30,9 +30,9 @@ beforeEach(() => {
 describe('compareRoutes', () => {
   it('maps compatible selections to one exact backend request', () => {
     expect(directModeRequest(['BUS'])).toEqual({ mode: 'TRANSIT', transitModes: ['BUS'], label: 'Bus' })
-    expect(directModeRequest(['WALK', 'TRAIN'])).toEqual({ mode: 'TRANSIT', transitModes: ['TRAIN'], label: 'Walk + Train' })
-    expect(directModeRequest(['BUS', 'SUBWAY'])).toEqual({ mode: 'TRANSIT', transitModes: ['BUS', 'SUBWAY'], label: 'Bus + Subway' })
-    expect(directModeRequest(['WALK'])).toEqual({ mode: 'WALK', label: 'Walk' })
+    expect(directModeRequest(['WALK', 'TRAIN'])).toEqual({ mode: 'TRANSIT', transitModes: ['TRAIN'], label: 'Jalan + Kereta' })
+    expect(directModeRequest(['BUS', 'SUBWAY'])).toEqual({ mode: 'TRANSIT', transitModes: ['BUS', 'SUBWAY'], label: 'Bus + MRT' })
+    expect(directModeRequest(['WALK'])).toEqual({ mode: 'WALK', label: 'Jalan' })
   })
 
   it('posts the planner payload with an AbortSignal and unwraps data', async () => {

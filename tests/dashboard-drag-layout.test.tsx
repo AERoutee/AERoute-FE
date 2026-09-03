@@ -38,18 +38,18 @@ const props = {
 describe('dashboard drag layout', () => {
   it('keeps the report mobile handle tall and desktop title drag target wide', () => {
     render(<RoadReportSheet {...props} />)
-    expect(screen.getByRole('button', { name: 'Resize report panel' })).toHaveClass('min-h-11')
-    const drag = screen.getByRole('button', { name: 'Drag report panel' })
+    expect(screen.getByRole('button', { name: 'Ubah ukuran panel laporan' })).toHaveClass('min-h-11')
+    const drag = screen.getByRole('button', { name: 'Geser panel laporan' })
     expect(drag).toHaveClass('flex-1')
     expect(drag).not.toHaveClass('hover:bg-ae-soft', 'rounded-sm', 'rounded-lg')
-    expect(drag).toHaveTextContent('What is happening?')
+    expect(drag).toHaveTextContent('Apa yang terjadi?')
   })
 
   it('keeps anchored report details free of drag and resize controls', () => {
     render(<RoadReportDetailPanel variant="anchored" report={report} onClose={handler} onUpdate={handler} />)
-    expect(screen.queryByRole('button', { name: 'Resize report details panel' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Drag report details panel' })).not.toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Blocked path road report details' })).toHaveClass('overflow-auto')
+    expect(screen.queryByRole('button', { name: 'Ubah ukuran panel detail laporan' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Geser panel detail laporan' })).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Detail laporan Jalur terhalang' })).toHaveClass('overflow-auto')
   })
 
   it('keeps only report creation draggable and renders details through the map popup', () => {
@@ -59,7 +59,7 @@ describe('dashboard drag layout', () => {
     expect(source).not.toContain('const reportDetailDrag = useDraggablePanel')
     expect(source).toContain('reportPopup={(report, onClose) => <RoadReportDetailPanel variant="anchored"')
     expect(source).toContain('mobileHandle={{ height: mobileSheet.height')
-    expect(source).toMatch(/aria-label="Resize route panel"/)
-    expect(source).toContain('min-h-11 w-full touch-none')
+    expect(source).toMatch(/aria-label="Ubah ukuran panel rute"/)
+    expect(source).toContain('min-h-11 w-full shrink-0 touch-none')
   })
 })

@@ -10,5 +10,4 @@ export const API_ENDPOINTS = {
   savedCommutes: '/api/v1/saved-commutes',
   savedCommute: (id: string) => `/api/v1/saved-commutes/${id}`,
   tripImpacts: '/api/v1/trip-impacts',
-  tripImpactSummary: '/api/v1/trip-impacts/summary',
 } as const

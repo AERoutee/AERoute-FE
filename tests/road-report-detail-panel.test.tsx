@@ -57,34 +57,34 @@ describe('RoadReportDetailPanel', () => {
   it('renders an anchored compact variant without sheet or drag controls', () => {
     render(<RoadReportDetailPanel variant="anchored" report={report} onClose={handler} onUpdate={handler} />)
 
-    const panel = screen.getByRole('region', { name: 'Crash road report details' })
+    const panel = screen.getByRole('region', { name: 'Detail laporan Kecelakaan' })
     expect(panel).toHaveClass('max-h-[min(75dvh,36rem)]', 'w-[min(22rem,calc(100vw-3rem))]', 'max-w-[22rem]', 'overflow-auto')
     expect(panel).not.toHaveClass('overflow-hidden')
-    expect(screen.queryByRole('button', { name: 'Resize report details panel' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Drag report details panel' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Close report details' })).toHaveClass('size-11')
-    expect(screen.getByRole('heading', { name: 'Crash' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ubah ukuran panel detail laporan' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Geser panel detail laporan' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tutup detail laporan' })).toHaveClass('size-11')
+    expect(screen.getByRole('heading', { name: 'Kecelakaan' })).toBeInTheDocument()
   })
 
   it('renders a dynamically labelled hierarchy, metadata, lifecycle, and drag handles', () => {
     render(<RoadReportDetailPanel report={report} {...panelProps} />)
 
-    expect(screen.getByText('Road report')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Crash' })).toHaveAttribute('id', 'road-report-detail-title')
+    expect(screen.getByText('Laporan jalan')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Kecelakaan' })).toHaveAttribute('id', 'road-report-detail-title')
     expect(document.querySelector('header img')).toHaveAttribute('src', expect.stringContaining('test-file-stub'))
-    expect(screen.getByText('Active')).toBeInTheDocument()
-    expect(screen.queryByText('Your report')).not.toBeInTheDocument()
-    expect(screen.getByText('Reported by Rider')).toBeInTheDocument()
-    const reportedTime = screen.getByText(new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(report.createdAt)))
+    expect(screen.getByText('Aktif')).toBeInTheDocument()
+    expect(screen.queryByText('Laporan Anda')).not.toBeInTheDocument()
+    expect(screen.getByText('Dilaporkan oleh Rider')).toBeInTheDocument()
+    const reportedTime = screen.getByText(new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(report.createdAt)))
     expect(reportedTime).toHaveAttribute('datetime', report.createdAt)
-    expect(reportedTime.parentElement).toHaveTextContent('4 days ago')
-    const drag = screen.getByRole('button', { name: 'Drag report details panel' })
+    expect(reportedTime.parentElement).toHaveTextContent('4 hari lalu')
+    const drag = screen.getByRole('button', { name: 'Geser panel detail laporan' })
     expect(drag).toHaveClass('flex-1')
     expect(drag).not.toHaveClass('bg-ae-soft', 'rounded-sm', 'rounded-lg')
     expect(drag.querySelector('svg')).not.toBeInTheDocument()
     fireEvent.pointerDown(drag)
     expect(handler).toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Resize report details panel' })).toHaveClass('min-h-11')
+    expect(screen.getByRole('button', { name: 'Ubah ukuran panel detail laporan' })).toHaveClass('min-h-11')
   })
 
   it('shows valid images as a lead image and grid with accessible links', () => {
@@ -95,13 +95,13 @@ describe('RoadReportDetailPanel', () => {
     ]
     render(<RoadReportDetailPanel report={{ ...report, images }} {...panelProps} />)
 
-    const first = screen.getByRole('img', { name: 'Crash road report photo 1' })
+    const first = screen.getByRole('img', { name: 'Kecelakaan foto laporan 1' })
     expect(first).toHaveClass('aspect-video')
     expect(first).toHaveAttribute('loading', 'lazy')
-    expect(first.closest('a')).toHaveAccessibleName('Open Crash road report photo 1 in a new tab')
+    expect(first.closest('a')).toHaveAccessibleName('Buka foto laporan Kecelakaan 1 di tab baru')
     expect(first.closest('a')).toHaveAttribute('rel', expect.stringContaining('noreferrer'))
-    expect(screen.getByRole('img', { name: 'Crash road report photo 2' })).toBeInTheDocument()
-    expect(screen.queryByRole('img', { name: 'Crash road report photo 3' })).not.toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Kecelakaan foto laporan 2' })).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'Kecelakaan foto laporan 3' })).not.toBeInTheDocument()
   })
 
   it('renders no photo UI when no valid image exists', () => {
@@ -109,20 +109,20 @@ describe('RoadReportDetailPanel', () => {
 
     expect(screen.queryByText('No photo attached')).not.toBeInTheDocument()
     expect(screen.queryByText('Check the report time and community responses for context.')).not.toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: 'Report photos' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Foto laporan' })).not.toBeInTheDocument()
   })
 
   it('shows evidence strength, real zero scores, factors on demand, and correct vote plurals', async () => {
     render(<RoadReportDetailPanel report={{ ...report, trust: { ...report.trust, score: 0 }, verification: { confirmations: 1, disputes: 2, viewerVerdict: null } }} {...panelProps} />)
 
-    expect(screen.getByText('Evidence strength')).toBeInTheDocument()
-    expect(screen.getByText('High · 0/100')).toBeInTheDocument()
-    expect(screen.getByText('1 confirmation · 2 disputes')).toBeInTheDocument()
-    expect(screen.getByText('This evidence score is not a safety assessment.')).toBeInTheDocument()
-    const details = screen.getByText('How evidence is scored').closest('details')!
+    expect(screen.getByText('Kekuatan bukti')).toBeInTheDocument()
+    expect(screen.getByText('Tinggi · 0/100')).toBeInTheDocument()
+    expect(screen.getByText('1 konfirmasi · 2 sanggahan')).toBeInTheDocument()
+    expect(screen.getByText('Skor bukti ini bukan penilaian keselamatan.')).toBeInTheDocument()
+    const details = screen.getByText('Cara penilaian bukti').closest('details')!
     expect(details).not.toHaveAttribute('open')
-    await userEvent.click(within(details).getByText('How evidence is scored'))
-    expect(within(details).getByText('Recency')).toBeInTheDocument()
+    await userEvent.click(within(details).getByText('Cara penilaian bukti'))
+    expect(within(details).getByText('Kebaruan')).toBeInTheDocument()
     expect(within(details).getByText('35/40')).toBeInTheDocument()
     expect(within(details).getByText('20/30')).toBeInTheDocument()
     expect(within(details).getByText('27/30')).toBeInTheDocument()
@@ -132,18 +132,18 @@ describe('RoadReportDetailPanel', () => {
     const legacy = { ...report, trust: undefined, verification: undefined } as unknown as RoadReport
     render(<RoadReportDetailPanel report={legacy} {...panelProps} />)
 
-    expect(screen.queryByText('Evidence strength')).not.toBeInTheDocument()
+    expect(screen.queryByText('Kekuatan bukti')).not.toBeInTheDocument()
     expect(screen.queryByText('Evidence score unavailable')).not.toBeInTheDocument()
-    expect(screen.queryByText('0 confirmations · 0 disputes')).not.toBeInTheDocument()
+    expect(screen.queryByText('0 konfirmasi · 0 sanggahan')).not.toBeInTheDocument()
   })
 
   it('shows community response counts without a synthetic score when votes exist', () => {
     render(<RoadReportDetailPanel report={{ ...report, trust: undefined, verification: { confirmations: 0, disputes: 2, viewerVerdict: null } } as RoadReport} {...panelProps} />)
 
-    expect(screen.getByText('Community responses')).toBeInTheDocument()
-    expect(screen.getByText('0 confirmations · 2 disputes')).toBeInTheDocument()
+    expect(screen.getByText('Respons komunitas')).toBeInTheDocument()
+    expect(screen.getByText('0 konfirmasi · 2 sanggahan')).toBeInTheDocument()
     expect(screen.queryByText(/\/100/)).not.toBeInTheDocument()
-    expect(screen.queryByText('This evidence score is not a safety assessment.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Skor bukti ini bukan penilaian keselamatan.')).not.toBeInTheDocument()
   })
 
   it('lets an active viewer add, inspect, and remove a response', async () => {
@@ -153,9 +153,9 @@ describe('RoadReportDetailPanel', () => {
     retract.mockResolvedValue({ verification: { confirmations: 2, disputes: 1, viewerVerdict: null }, trust: report.trust })
     const view = render(<RoadReportDetailPanel report={report} {...panelProps} onUpdate={onUpdate} />)
 
-    expect(screen.getByText('Is this report still current?')).toBeInTheDocument()
-    const stillThere = screen.getByRole('button', { name: 'Still there' })
-    const noLongerThere = screen.getByRole('button', { name: 'No longer there' })
+    expect(screen.getByText('Apakah laporan ini masih berlaku?')).toBeInTheDocument()
+    const stillThere = screen.getByRole('button', { name: 'Masih ada' })
+    const noLongerThere = screen.getByRole('button', { name: 'Sudah tidak ada' })
     expect(stillThere).toHaveAttribute('aria-pressed', 'false')
     expect(noLongerThere).toHaveAttribute('aria-pressed', 'false')
     await userEvent.click(stillThere)
@@ -163,9 +163,9 @@ describe('RoadReportDetailPanel', () => {
     expect(onUpdate).toHaveBeenCalledWith({ ...report, ...evidence })
 
     view.rerender(<RoadReportDetailPanel report={{ ...report, verification: { ...report.verification, viewerVerdict: 'DISPUTE' } }} {...panelProps} onUpdate={onUpdate} />)
-    expect(screen.getByRole('button', { name: 'No longer there' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText('Your response: No longer there')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Remove my response' }))
+    expect(screen.getByRole('button', { name: 'Sudah tidak ada' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Respons Anda: Sudah tidak ada')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Hapus respons saya' }))
     expect(retract).toHaveBeenCalledWith('report-1')
   })
 
@@ -173,38 +173,38 @@ describe('RoadReportDetailPanel', () => {
     isPending = true
     render(<RoadReportDetailPanel report={report} {...panelProps} />)
 
-    expect(screen.getByRole('button', { name: 'Still there' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'No longer there' })).toBeDisabled()
-    expect(screen.getByRole('status')).toHaveTextContent('Saving response...')
+    expect(screen.getByRole('button', { name: 'Masih ada' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Sudah tidak ada' })).toBeDisabled()
+    expect(screen.getByRole('status')).toHaveTextContent('Menyimpan respons...')
   })
 
   it('gives active owners confirmation-based management without voting', async () => {
     resolve.mockResolvedValue({ ...report, isOwner: true, status: 'RESOLVED', resolvedAt: '2026-09-02T11:00:00.000Z' })
     render(<RoadReportDetailPanel report={{ ...report, isOwner: true }} {...panelProps} />)
 
-    expect(screen.getByText('Your report')).toBeInTheDocument()
-    expect(screen.getByText('Report management')).toBeInTheDocument()
-    expect(screen.queryByText('Is this report still current?')).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Mark as resolved' }))
+    expect(screen.getByText('Laporan Anda')).toBeInTheDocument()
+    expect(screen.getByText('Kelola laporan')).toBeInTheDocument()
+    expect(screen.queryByText('Apakah laporan ini masih berlaku?')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Tandai selesai' }))
     expect(resolve).not.toHaveBeenCalled()
-    const dialog = screen.getByRole('alertdialog', { name: 'Mark report as resolved?' })
-    expect(within(dialog).getByText('This removes the report from the active map. This action cannot be undone.')).toBeInTheDocument()
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Mark as resolved' }))
+    const dialog = screen.getByRole('alertdialog', { name: 'Tandai laporan sebagai selesai?' })
+    expect(within(dialog).getByText('Laporan akan dihapus dari peta aktif. Tindakan ini tidak dapat dibatalkan.')).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Tandai selesai' }))
     expect(resolve).toHaveBeenCalledWith('report-1')
   })
 
   it.each([
-    ['RESOLVED', '2026-09-01T09:00:00.000Z', 'Resolved'],
-    ['EXPIRED', null, 'Expired'],
+    ['RESOLVED', '2026-09-01T09:00:00.000Z', 'Selesai'],
+    ['EXPIRED', null, 'Kedaluwarsa'],
   ] as const)('keeps %s reports read-only with lifecycle metadata', (status, resolvedAt, lifecycleLabel) => {
     render(<RoadReportDetailPanel report={{ ...report, status, resolvedAt }} {...panelProps} />)
 
-    expect(screen.getAllByText(status === 'RESOLVED' ? 'Resolved' : 'Expired')).toHaveLength(2)
+    expect(screen.getAllByText(status === 'RESOLVED' ? 'Selesai' : 'Kedaluwarsa')).toHaveLength(2)
     const lifecycleValue = status === 'RESOLVED' ? resolvedAt! : report.expiresAt
-    const lifecycleTime = screen.getByText(new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(lifecycleValue)))
+    const lifecycleTime = screen.getByText(new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(lifecycleValue)))
     expect(lifecycleTime).toHaveAttribute('datetime', lifecycleValue)
     expect(lifecycleTime.parentElement).toHaveTextContent(lifecycleLabel)
-    expect(screen.queryByText('Is this report still current?')).not.toBeInTheDocument()
-    expect(screen.queryByText('Report management')).not.toBeInTheDocument()
+    expect(screen.queryByText('Apakah laporan ini masih berlaku?')).not.toBeInTheDocument()
+    expect(screen.queryByText('Kelola laporan')).not.toBeInTheDocument()
   })
 })

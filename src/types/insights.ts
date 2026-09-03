@@ -16,4 +16,3 @@ export type SavedCommuteInput = {
 }
 export type SavedCommute = SavedCommuteInput & { id: string; createdAt: string; updatedAt: string }
 export type TripImpact = { id: string; comparisonId: string; routeResultId: string; mode: TravelMode; distanceMeters: number; durationSeconds: number; activeDistanceMeters: number; activeDurationSeconds: number; baselineExposureIndex: number; selectedExposureIndex: number; fewerConfirmedReportSignals: number; completedAt: string }
-export type TripImpactSummary = { completedTrips: number; activeTravelDistanceMeters: number; activeTravelDurationSeconds: number; modeledExposureIndexBaseline: number; modeledExposureIndexSelected: number; modeledExposureIndexReduction: number; fewerConfirmedReportSignals: number; disclaimer: string }

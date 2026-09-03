@@ -1,4 +1,4 @@
-import { LoaderCircle, MapPinned, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, LocateFixed, LoaderCircle, MapPinned, TriangleAlert } from 'lucide-react'
 import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { getTransitStopDetails } from '@/api/route-comparison'
@@ -37,6 +37,7 @@ type RoutePreviewMapProps = {
   transitStops?: TransitStop[]
   weatherPoints?: Array<{ latitude: number; longitude: number; conditions: WeatherConditions }>
   navigationRoute?: RouteOption | null
+  navigationSession?: number
   onNavigationProgress?: (progress: { remainingMeters: number; heading: number; isOffRoute: boolean }) => void
   onOriginChange?: (place: Place) => void
   onDestinationChange?: (place: Place) => void
@@ -143,7 +144,7 @@ function popupShell(eyebrowText: string, titleText: string, close: () => void) {
   root.style.cssText = 'position:relative;width:100%;max-width:min(34rem,calc(100vw - 2rem));max-height:min(75dvh,36rem);overflow:auto;padding:14px;font-family:Nunito,Segoe UI,sans-serif;color:#142922;box-sizing:border-box;'
   const closeButton = document.createElement('button')
   closeButton.type = 'button'
-  closeButton.setAttribute('aria-label', 'Close place details')
+  closeButton.setAttribute('aria-label', 'Tutup detail tempat')
   closeButton.textContent = '×'
   closeButton.style.cssText = 'position:absolute;top:0;right:0;z-index:2;width:44px;height:44px;border:0;background:rgba(255,255,255,.94);font-size:26px;line-height:1;cursor:pointer;'
   closeButton.addEventListener('click', close)
@@ -197,7 +198,7 @@ function restoreRerenderedFocus(root: HTMLElement) {
   const label = focused.getAttribute('aria-label')
   return () => queueMicrotask(() => {
     const controls = Array.from(root.querySelectorAll<HTMLElement>('button,[tabindex]'))
-    const target = label?.startsWith('Open photo ') ? controls.find((control) => control.getAttribute('aria-label')?.startsWith('Open photo ')) : controls.find((control) => control.getAttribute('aria-label') === label)
+    const target = label?.startsWith('Buka foto ') ? controls.find((control) => control.getAttribute('aria-label')?.startsWith('Buka foto ')) : controls.find((control) => control.getAttribute('aria-label') === label)
     ;(target ?? root).focus()
   })
 }
@@ -210,13 +211,13 @@ function openPhotoLightbox(place: RestStopCandidate, sourcePhotos: PlacePhoto[],
   overlay.setAttribute('data-place-lightbox', '')
   overlay.setAttribute('role', 'dialog')
   overlay.setAttribute('aria-modal', 'true')
-  overlay.setAttribute('aria-label', `${place.name} photo`)
+  overlay.setAttribute('aria-label', `${place.name} foto`)
   overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:rgba(10,24,19,.82);padding:24px;'
   const panel = document.createElement('div')
   panel.style.cssText = 'position:relative;width:min(48rem,100%);max-height:calc(100vh - 48px);overflow:auto;border-radius:16px;background:white;padding:16px;color:#142922;'
   const close = document.createElement('button')
   close.type = 'button'
-  close.setAttribute('aria-label', 'Close photo')
+  close.setAttribute('aria-label', 'Tutup foto')
   close.textContent = '×'
   close.style.cssText = 'position:absolute;top:0;right:0;z-index:2;width:44px;height:44px;border:0;background:white;font-size:28px;cursor:pointer;'
   const dismiss = () => { overlay.remove(); document.removeEventListener('keydown', onKeyDown); closeActiveLightbox = null; if (trigger.isConnected) trigger.focus() }
@@ -229,19 +230,19 @@ function openPhotoLightbox(place: RestStopCandidate, sourcePhotos: PlacePhoto[],
     if (!source) { photos.splice(index, 1); if (!photos.length) { dismiss(); return }; index = Math.min(index, photos.length - 1); renderPhoto(); return }
     const image = document.createElement('img')
     image.src = source
-    image.alt = `${place.name} photo ${index + 1}`
+    image.alt = `${place.name} foto ${index + 1}`
     image.style.cssText = 'display:block;width:100%;max-height:70vh;object-fit:contain;border-radius:10px;background:#e5f4ed;'
     image.addEventListener('error', () => { photos.splice(index, 1); if (!photos.length) { dismiss(); return }; index = Math.min(index, photos.length - 1); renderPhoto() })
     panel.append(image)
     if (photos.length > 1) {
-      const previous = carouselButton('Previous photo', '‹', () => show(index - 1))
-      const next = carouselButton('Next photo', '›', () => show(index + 1))
+      const previous = carouselButton('Foto sebelumnya', '‹', () => show(index - 1))
+      const next = carouselButton('Foto berikutnya', '›', () => show(index + 1))
       previous.style.cssText += 'position:absolute;left:24px;top:50%;transform:translateY(-50%);'
       next.style.cssText += 'position:absolute;right:24px;top:50%;transform:translateY(-50%);'
       panel.append(previous, next)
     }
     const indicator = document.createElement('span')
-    indicator.textContent = `${index + 1} of ${photos.length}`
+    indicator.textContent = `${index + 1} dari ${photos.length}`
     indicator.setAttribute('aria-live', 'polite')
     indicator.style.cssText = 'display:block;margin-top:10px;text-align:center;font-size:12px;font-weight:900;'
     appendPhotoAttribution(panel, photo)
@@ -292,11 +293,11 @@ function appendGallery(root: HTMLElement, place: RestStopCandidate) {
     frame.style.cssText = 'position:relative;overflow:hidden;border-radius:10px;background:#e5f4ed;'
     const button = document.createElement('button')
     button.type = 'button'
-    button.setAttribute('aria-label', `Open photo ${index + 1}`)
+    button.setAttribute('aria-label', `Buka foto ${index + 1}`)
     button.style.cssText = 'display:block;width:100%;border:0;background:transparent;padding:0;cursor:pointer;'
     const image = document.createElement('img')
     image.src = source
-    image.alt = `${place.name} photo ${index + 1}`
+    image.alt = `${place.name} foto ${index + 1}`
     image.width = 16
     image.height = 9
     image.style.cssText = 'display:block;width:100%;height:auto;aspect-ratio:16 / 9;object-fit:cover;'
@@ -305,15 +306,15 @@ function appendGallery(root: HTMLElement, place: RestStopCandidate) {
     button.append(image)
     frame.append(button)
     if (photos.length > 1) {
-      const previous = carouselButton('Previous photo', '‹', () => show(index - 1))
-      const next = carouselButton('Next photo', '›', () => show(index + 1))
+      const previous = carouselButton('Foto sebelumnya', '‹', () => show(index - 1))
+      const next = carouselButton('Foto berikutnya', '›', () => show(index + 1))
       previous.style.cssText += 'position:absolute;left:8px;top:50%;transform:translateY(-50%);'
       next.style.cssText += 'position:absolute;right:8px;top:50%;transform:translateY(-50%);'
       frame.append(previous, next)
     }
     gallery.append(frame)
     const indicator = document.createElement('span')
-    indicator.textContent = `${index + 1} of ${photos.length}`
+    indicator.textContent = `${index + 1} dari ${photos.length}`
     indicator.setAttribute('aria-live', 'polite')
     indicator.style.cssText = 'display:block;margin-top:6px;text-align:center;font-size:11px;font-weight:900;'
     appendPhotoAttribution(gallery, photo)
@@ -324,7 +325,7 @@ function appendGallery(root: HTMLElement, place: RestStopCandidate) {
       photos.forEach((_item, dotIndex) => {
         const dot = document.createElement('button')
         dot.type = 'button'
-        dot.setAttribute('aria-label', `Show photo ${dotIndex + 1}`)
+        dot.setAttribute('aria-label', `Tampilkan foto ${dotIndex + 1}`)
         dot.setAttribute('aria-current', dotIndex === index ? 'true' : 'false')
         dot.style.cssText = `width:12px;height:12px;border:0;border-radius:999px;background:${dotIndex === index ? '#087f5b' : '#b8c5bf'};padding:0;cursor:pointer;`
         dot.addEventListener('click', () => show(dotIndex))
@@ -362,7 +363,7 @@ function facilityRows(root: HTMLElement, rows: Array<{ label: string; value: str
 }
 
 function placeInfoContent(place: RestStopCandidate, accessible: boolean, close: () => void) {
-  const root = popupShell('Rest-stop candidate', place.name, close)
+  const root = popupShell('Kandidat tempat istirahat', place.name, close)
   const layout = document.createElement('div')
   layout.className = 'aeroute-place-grid'
   const primary = document.createElement('div')
@@ -371,22 +372,22 @@ function placeInfoContent(place: RestStopCandidate, accessible: boolean, close: 
   facilities.className = 'aeroute-place-facilities'
   appendGallery(primary, place)
   const address = document.createElement('span')
-  address.textContent = place.formattedAddress ?? 'Address unknown'
+  address.textContent = place.formattedAddress ?? 'Alamat tidak diketahui'
   address.style.cssText = 'display:block;margin-top:8px;font-size:11px;font-weight:700;color:#65766e;overflow-wrap:anywhere;'
   primary.append(address)
-  if (accessible) { const badge = document.createElement('strong'); badge.textContent = 'Accessibility information available'; badge.style.cssText = 'display:inline-flex;margin-top:8px;border-radius:999px;background:#e5f4ed;padding:5px 8px;font-size:10px;font-weight:900;color:#087f5b;'; primary.append(badge) }
+  if (accessible) { const badge = document.createElement('strong'); badge.textContent = 'Informasi aksesibilitas tersedia'; badge.style.cssText = 'display:inline-flex;margin-top:8px;border-radius:999px;background:#e5f4ed;padding:5px 8px;font-size:10px;font-weight:900;color:#087f5b;'; primary.append(badge) }
   const accessibility = place.accessibility
-  const state = (value: boolean | undefined, negative = 'Not available') => value === undefined ? 'Unknown' : value ? 'Available' : negative
+  const state = (value: boolean | undefined, negative = 'Tidak tersedia') => value === undefined ? 'Tidak diketahui' : value ? 'Tersedia' : negative
   facilityRows(facilities, [
-    { label: 'Open status', value: place.openNow === undefined ? 'Unknown' : place.openNow ? 'Open now' : 'Closed' },
-    { label: 'Toilet', value: state(place.restroom, 'Not listed'), icon: colorToiletIcon },
-    { label: 'Entrance', value: state(accessibility?.wheelchairAccessibleEntrance), icon: colorDoorIcon },
-    { label: 'Parking', value: state(accessibility?.wheelchairAccessibleParking), icon: colorParkingIcon },
-    { label: 'Restroom', value: state(accessibility?.wheelchairAccessibleRestroom), icon: colorToiletIcon },
-    { label: 'Seating', value: state(accessibility?.wheelchairAccessibleSeating), icon: colorChairIcon },
+    { label: 'Status buka', value: place.openNow === undefined ? 'Tidak diketahui' : place.openNow ? 'Buka sekarang' : 'Tutup' },
+    { label: 'Toilet', value: state(place.restroom, 'Tidak tercantum'), icon: colorToiletIcon },
+    { label: 'Pintu masuk', value: state(accessibility?.wheelchairAccessibleEntrance), icon: colorDoorIcon },
+    { label: 'Parkir', value: state(accessibility?.wheelchairAccessibleParking), icon: colorParkingIcon },
+    { label: 'Toilet aksesibel', value: state(accessibility?.wheelchairAccessibleRestroom), icon: colorToiletIcon },
+    { label: 'Tempat duduk', value: state(accessibility?.wheelchairAccessibleSeating), icon: colorChairIcon },
   ])
   const disclosure = document.createElement('small')
-  disclosure.textContent = 'Safety not verified'
+  disclosure.textContent = 'Keamanan belum diverifikasi'
   disclosure.style.cssText = 'display:block;margin-top:8px;font-size:10px;font-weight:700;color:#65766e;'
   primary.append(disclosure)
   layout.append(primary, facilities)
@@ -400,14 +401,14 @@ function transitParking(options?: ParkingOptions) {
 }
 
 function transitStopInfoContent(stop: TransitStop, state: 'loading' | 'error' | TransitStopDetailsResult, close: () => void) {
-  const root = popupShell('Transit stop', stop.name, close)
+  const root = popupShell('Perhentian transit', stop.name, close)
   const baseDetails = document.createElement('p')
-  baseDetails.textContent = `${stop.role === 'departure' ? 'Departure' : 'Arrival'} · Stop ${stop.ordinal} · ${stop.vehicleType}${stop.line ? ` · ${stop.line}` : ''}${stop.headsign ? ` · toward ${stop.headsign}` : ''}`
+  baseDetails.textContent = `${stop.role === 'departure' ? 'Keberangkatan' : 'Kedatangan'} · Perhentian ${stop.ordinal} · ${stop.vehicleType}${stop.line ? ` · ${stop.line}` : ''}${stop.headsign ? ` · menuju ${stop.headsign}` : ''}`
   baseDetails.style.cssText = 'margin:5px 0 0;font-size:12px;line-height:1.5;font-weight:700;color:#51645b;'
   root.append(baseDetails)
   if (state === 'loading' || state === 'error' || state.status === 'NOT_FOUND') {
     const status = document.createElement('p')
-    status.textContent = state === 'loading' ? 'Loading Google Places details…' : state === 'error' ? 'Transit stop details are temporarily unavailable.' : 'No Google Places details found.'
+    status.textContent = state === 'loading' ? 'Memuat detail Google Places…' : state === 'error' ? 'Detail perhentian transit sementara tidak tersedia.' : 'Detail Google Places tidak ditemukan.'
     status.style.cssText = 'margin:10px 0 0;font-size:11px;font-weight:700;color:#65766e;'
     status.setAttribute('role', 'status')
     root.append(status)
@@ -417,17 +418,17 @@ function transitStopInfoContent(stop: TransitStop, state: 'loading' | 'error' | 
   appendGallery(root, place)
   if (place.formattedAddress) { const address = document.createElement('span'); address.textContent = place.formattedAddress; address.style.cssText = 'display:block;margin-top:8px;font-size:11px;font-weight:700;color:#65766e;'; root.append(address) }
   const accessibility = place.accessibility
-  if (accessibility && Object.values(accessibility).some(Boolean)) { const badge = document.createElement('strong'); badge.textContent = 'Accessibility information available'; badge.style.cssText = 'display:inline-flex;margin-top:8px;border-radius:999px;background:#e5f4ed;padding:5px 8px;font-size:10px;font-weight:900;color:#087f5b;'; root.append(badge) }
+  if (accessibility && Object.values(accessibility).some(Boolean)) { const badge = document.createElement('strong'); badge.textContent = 'Informasi aksesibilitas tersedia'; badge.style.cssText = 'display:inline-flex;margin-top:8px;border-radius:999px;background:#e5f4ed;padding:5px 8px;font-size:10px;font-weight:900;color:#087f5b;'; root.append(badge) }
   const rows: Array<{ label: string; value: string; icon?: string }> = []
   const add = (label: string, value: boolean | undefined, positive: string, negative: string, icon?: string) => { if (value !== undefined) rows.push({ label, value: value ? positive : negative, icon }) }
-  add('Open status', place.openNow, 'Open now', 'Closed')
-  add('Toilet', place.restroom, 'Available', 'Not listed', colorToiletIcon)
-  add('Parking', transitParking(place.parkingOptions), 'Available', 'Not available', colorParkingIcon)
-  add('Entrance', accessibility?.wheelchairAccessibleEntrance, 'Available', 'Not available', colorDoorIcon)
-  add('Accessible restroom', accessibility?.wheelchairAccessibleRestroom, 'Available', 'Not available', colorToiletIcon)
-  add('Accessible seating', accessibility?.wheelchairAccessibleSeating, 'Available', 'Not available', colorChairIcon)
+  add('Status buka', place.openNow, 'Buka sekarang', 'Tutup')
+  add('Toilet', place.restroom, 'Tersedia', 'Tidak tercantum', colorToiletIcon)
+  add('Parkir', transitParking(place.parkingOptions), 'Tersedia', 'Tidak tersedia', colorParkingIcon)
+  add('Pintu masuk', accessibility?.wheelchairAccessibleEntrance, 'Tersedia', 'Tidak tersedia', colorDoorIcon)
+  add('Toilet aksesibel', accessibility?.wheelchairAccessibleRestroom, 'Tersedia', 'Tidak tersedia', colorToiletIcon)
+  add('Tempat duduk aksesibel', accessibility?.wheelchairAccessibleSeating, 'Tersedia', 'Tidak tersedia', colorChairIcon)
   facilityRows(root, rows)
-  if (accessibility && Object.values(accessibility).some((value) => value !== undefined)) { const disclosure = document.createElement('small'); disclosure.textContent = 'Google Maps accessibility information; not a step-free guarantee.'; disclosure.style.cssText = 'display:block;margin-top:8px;font-size:10px;font-weight:700;color:#65766e;'; root.append(disclosure) }
+  if (accessibility && Object.values(accessibility).some((value) => value !== undefined)) { const disclosure = document.createElement('small'); disclosure.textContent = 'Informasi aksesibilitas dari Google Maps; bukan jaminan rute bebas tangga.'; disclosure.style.cssText = 'display:block;margin-top:8px;font-size:10px;font-weight:700;color:#65766e;'; root.append(disclosure) }
   return root
 }
 
@@ -443,11 +444,11 @@ function weatherSymbol(conditionType: string) {
 function weatherCardIcon(weather: Extract<WeatherConditions, { status: 'available' }>) {
   const symbol = weatherSymbol(weather.conditionType)
   const eta = weather.forecastOffsetMinutes < 60 ? `+${weather.forecastOffsetMinutes}m` : `+${Math.round(weather.forecastOffsetMinutes / 60)}h`
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="168" height="72" viewBox="0 0 168 72"><defs><filter id="s" x="-20%" y="-30%" width="140%" height="170%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#142922" flood-opacity=".22"/></filter></defs><g filter="url(#s)"><rect x="4" y="4" width="160" height="62" rx="10" fill="#1769e0"/><text x="17" y="15" font-family="Arial,sans-serif" font-size="8" font-weight="800" fill="#bcd7ff">FORECAST ${eta}</text><text x="17" y="34" font-family="Arial,sans-serif" font-size="24" font-weight="900" fill="white">${Math.round(weather.temperatureC)}°</text><text x="138" y="34" text-anchor="middle" font-family="Apple Color Emoji,Segoe UI Emoji,sans-serif" font-size="22">${symbol}</text><text x="17" y="55" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#dcebff">Rain ${weather.precipitationProbabilityPercent}%</text><line x1="82" y1="45" x2="82" y2="57" stroke="#82b4f6"/><text x="93" y="55" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#dcebff">Wind ${Math.round(weather.windSpeedKph)} km/h</text></g></svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="168" height="72" viewBox="0 0 168 72"><defs><filter id="s" x="-20%" y="-30%" width="140%" height="170%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#142922" flood-opacity=".22"/></filter></defs><g filter="url(#s)"><rect x="4" y="4" width="160" height="62" rx="10" fill="#1769e0"/><text x="17" y="15" font-family="Arial,sans-serif" font-size="8" font-weight="800" fill="#bcd7ff">PRAKIRAAN ${eta}</text><text x="17" y="34" font-family="Arial,sans-serif" font-size="24" font-weight="900" fill="white">${Math.round(weather.temperatureC)}°</text><text x="138" y="34" text-anchor="middle" font-family="Apple Color Emoji,Segoe UI Emoji,sans-serif" font-size="22">${symbol}</text><text x="17" y="55" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#dcebff">Hujan ${weather.precipitationProbabilityPercent}%</text><line x1="82" y1="45" x2="82" y2="57" stroke="#82b4f6"/><text x="93" y="55" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#dcebff">Angin ${Math.round(weather.windSpeedKph)} km/h</text></g></svg>`
   return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, size: new google.maps.Size(168, 72), scaledSize: new google.maps.Size(168, 72), anchor: new google.maps.Point(84, 90) }
 }
 
-function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, selectedId, selectedRouteResultId, liveLocation, followLiveLocation, reports = emptyReports, selectedReport, restStopCandidates = emptyRestStops, transitStops = emptyTransitStops, weatherPoints = emptyWeatherPoints, navigationRoute, onNavigationProgress, onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onReportClose, reportPopup, onRouteSelect, onMapReady, showWeather = false, showReports = true, showRestStops = false, showAccessiblePlaces = false, onWeatherAvailabilityChange }: RoutePreviewMapProps) {
+function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, selectedId, selectedRouteResultId, liveLocation, followLiveLocation, navigationSession = 0, reports = emptyReports, selectedReport, restStopCandidates = emptyRestStops, transitStops = emptyTransitStops, weatherPoints = emptyWeatherPoints, navigationRoute, onNavigationProgress, onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onReportClose, reportPopup, onRouteSelect, onMapReady, showWeather = false, showReports = true, showRestStops = false, showAccessiblePlaces = false, onWeatherAvailabilityChange }: RoutePreviewMapProps) {
   const nodeRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<google.maps.Map | null>(null)
   const locationMarkerRef = useRef<google.maps.Marker | null>(null)
@@ -478,6 +479,11 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
   const reportPopupRef = useRef(reportPopup)
   const initialLocationCameraMapRef = useRef<google.maps.Map | null>(null)
   const lastFitSignatureRef = useRef('')
+  const cameraFollowingRef = useRef(false)
+  const navigationSessionRef = useRef(navigationSession)
+  const displayedLocationRef = useRef<google.maps.LatLngLiteral | null>(null)
+  const [cameraPausedSession, setCameraPausedSession] = useState<number | null>(null)
+  const cameraFollowing = Boolean(followLiveLocation) && cameraPausedSession !== navigationSession
   const [status, setStatus] = useState<'loading' | 'ready' | 'unavailable' | 'error'>(hasGoogleMapsKey() ? 'loading' : 'unavailable')
   const [mapVersion, setMapVersion] = useState(0)
   const [reportPopupHost, setReportPopupHost] = useState<HTMLElement | null>(null)
@@ -549,7 +555,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
   const showStreetViewUnavailable = useCallback((root: HTMLElement) => {
     let message = root.querySelector<HTMLElement>('[data-street-view-status]')
     if (!message) { message = document.createElement('p'); message.setAttribute('data-street-view-status', ''); message.setAttribute('role', 'status'); message.style.cssText = 'margin:8px 0 0;font-size:11px;font-weight:700;color:#65766e;'; root.append(message) }
-    message.textContent = 'Street View is unavailable.'
+    message.textContent = 'Street View tidak tersedia.'
   }, [])
 
   const checkStreetView = useCallback(async (root: HTMLElement, location: { latitude: number; longitude: number }) => {
@@ -562,7 +568,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
       if (!panoId) return null
       const button = document.createElement('button')
       button.type = 'button'
-      button.textContent = 'View 360°'
+      button.textContent = 'Lihat 360°'
       button.style.cssText = 'display:inline-flex;min-height:44px;align-items:center;border:0;background:transparent;padding:0;color:#087f5b;font-size:12px;font-weight:900;cursor:pointer;'
       button.addEventListener('click', () => {
         const panorama = mapRef.current?.getStreetView()
@@ -587,7 +593,14 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     }
   }, [clearStreetViewPending, closeStreetView, showStreetViewUnavailable])
 
-  useEffect(() => { callbacks.current = { onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onReportClose, onRouteSelect, onMapReady, onNavigationProgress, onWeatherAvailabilityChange }; reportPopupRef.current = reportPopup }, [onBoundsChange, onDestinationChange, onMapReady, onNavigationProgress, onOriginChange, onReportClose, onReportSelect, onRouteSelect, onWeatherAvailabilityChange, reportPopup])
+  useEffect(() => { callbacks.current = { onOriginChange, onDestinationChange, onBoundsChange, onReportSelect, onReportClose, onRouteSelect, onMapReady, onNavigationProgress, onWeatherAvailabilityChange }; reportPopupRef.current = reportPopup; navigationSessionRef.current = navigationSession }, [navigationSession, onBoundsChange, onDestinationChange, onMapReady, onNavigationProgress, onOriginChange, onReportClose, onReportSelect, onRouteSelect, onWeatherAvailabilityChange, reportPopup])
+  useEffect(() => { cameraFollowingRef.current = cameraFollowing }, [cameraFollowing])
+  useEffect(() => {
+    if (!streetViewVisible) return
+    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') closeStreetView() }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [closeStreetView, streetViewVisible])
   useEffect(() => { if (streetViewVisible) streetViewCloseRef.current?.focus() }, [streetViewVisible])
 
   useEffect(() => {
@@ -595,6 +608,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     if (!hasGoogleMapsKey() || !nodeRef.current) return
     let active = true
     let idleListener: google.maps.MapsEventListener | undefined
+    let dragListener: google.maps.MapsEventListener | undefined
     let tilesLoadedListener: google.maps.MapsEventListener | undefined
     let resizeObserver: ResizeObserver | undefined
     let loadingTimeout = 0
@@ -608,6 +622,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
         const northEast = bounds.getNorthEast(), southWest = bounds.getSouthWest()
         callbacks.current.onBoundsChange?.({ north: northEast.lat(), east: northEast.lng(), south: southWest.lat(), west: southWest.lng() })
       })
+      dragListener = map.addListener('dragstart', () => { if (cameraFollowingRef.current) setCameraPausedSession(navigationSessionRef.current) })
       tilesLoadedListener = google.maps.event.addListenerOnce(map, 'tilesloaded', () => { window.clearTimeout(loadingTimeout); if (active) { setStatus('ready'); callbacks.current.onMapReady?.(true) } })
       loadingTimeout = window.setTimeout(() => { if (active) { setStatus('error'); callbacks.current.onMapReady?.(false) } }, 12_000)
       let previousWidth = nodeRef.current.clientWidth
@@ -626,7 +641,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
       resizeObserver.observe(nodeRef.current)
       setMapVersion((value) => value + 1)
     }).catch(() => { if (active) { setStatus('error'); callbacks.current.onMapReady?.(false) } })
-    return () => { active = false; window.clearTimeout(loadingTimeout); idleListener?.remove(); tilesLoadedListener?.remove(); resizeObserver?.disconnect(); mapRef.current = null }
+    return () => { active = false; window.clearTimeout(loadingTimeout); idleListener?.remove(); dragListener?.remove(); tilesLoadedListener?.remove(); resizeObserver?.disconnect(); mapRef.current = null }
   }, [])
 
   useEffect(() => {
@@ -636,12 +651,12 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     checkpointOverlays.current = []
     const bounds = new google.maps.LatLngBounds()
     if (origin) {
-      const marker = new google.maps.Marker({ map, position: { lat: origin.latitude, lng: origin.longitude }, title: `Origin: ${origin.label}`, icon: checkpointIcon('origin'), draggable: Boolean(callbacks.current.onOriginChange), optimized: false })
+      const marker = new google.maps.Marker({ map, position: { lat: origin.latitude, lng: origin.longitude }, title: `Asal: ${origin.label}`, icon: checkpointIcon('origin'), draggable: !followLiveLocation && Boolean(callbacks.current.onOriginChange), optimized: false })
       marker.addListener('dragend', () => { const position = marker.getPosition(); if (position && callbacks.current.onOriginChange) { callbacks.current.onOriginChange({ ...origin, id: `map-origin-${position.lat()}-${position.lng()}`, label: 'Adjusted origin', detail: 'Checkpoint moved on map', latitude: position.lat(), longitude: position.lng() }) } })
       checkpointOverlays.current.push(marker); bounds.extend(marker.getPosition()!)
     }
     if (destination) {
-      const marker = new google.maps.Marker({ map, position: { lat: destination.latitude, lng: destination.longitude }, title: `Destination: ${destination.label}`, icon: checkpointIcon('destination'), draggable: Boolean(callbacks.current.onDestinationChange), optimized: false })
+      const marker = new google.maps.Marker({ map, position: { lat: destination.latitude, lng: destination.longitude }, title: `Tujuan: ${destination.label}`, icon: checkpointIcon('destination'), draggable: !followLiveLocation && Boolean(callbacks.current.onDestinationChange), optimized: false })
       marker.addListener('dragend', () => { const position = marker.getPosition(); if (position && callbacks.current.onDestinationChange) { callbacks.current.onDestinationChange({ ...destination, id: `map-destination-${position.lat()}-${position.lng()}`, label: 'Adjusted destination', detail: 'Checkpoint moved on map', latitude: position.lat(), longitude: position.lng() }) } })
       checkpointOverlays.current.push(marker); bounds.extend(marker.getPosition()!)
     }
@@ -658,7 +673,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     })
     const fitSignature = `${origin?.latitude},${origin?.longitude}|${destination?.latitude},${destination?.longitude}|${routes.map((route) => route.encodedPolyline).join('|')}`
     if ((origin || destination || routes.length) && fitSignature !== lastFitSignatureRef.current) { lastFitSignatureRef.current = fitSignature; map.fitBounds(bounds, { top: 150, right: 96, bottom: 96, left: 96 }) }
-  }, [destination, mapVersion, origin, routes, selectedId])
+  }, [destination, followLiveLocation, mapVersion, origin, routes, selectedId])
 
   useEffect(() => {
     const map = mapRef.current
@@ -667,8 +682,9 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     const snapped = navigationRoute ? snapToRoute(rawPosition, navigationRoute) : null
     const position = snapped && !snapped.isOffRoute ? snapped.position : rawPosition
     const heading = snapped && !snapped.isOffRoute ? snapped.heading : liveLocation.heading
+    displayedLocationRef.current = position
     if (snapped) callbacks.current.onNavigationProgress?.({ remainingMeters: snapped.remainingMeters, heading, isOffRoute: snapped.isOffRoute })
-    if (!locationMarkerRef.current) locationMarkerRef.current = new google.maps.Marker({ map, position, icon: liveLocationIcon(heading), title: 'Your live location', zIndex: 10, optimized: false })
+    if (!locationMarkerRef.current) locationMarkerRef.current = new google.maps.Marker({ map, position, icon: liveLocationIcon(heading), title: 'Lokasi Anda saat ini', zIndex: 10, optimized: false })
     else { locationMarkerRef.current.setPosition(position); locationMarkerRef.current.setIcon(liveLocationIcon(heading)) }
     if (!accuracyCircleRef.current) accuracyCircleRef.current = new google.maps.Circle({ map, center: rawPosition, radius: liveLocation.accuracy, strokeColor: '#087f5b', strokeOpacity: .35, strokeWeight: 1, fillColor: '#087f5b', fillOpacity: .08, clickable: false })
     else { accuracyCircleRef.current.setCenter(rawPosition); accuracyCircleRef.current.setRadius(liveLocation.accuracy) }
@@ -676,7 +692,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
       initialLocationCameraMapRef.current = map
       if (!origin && !destination && routes.length === 0 && !followLiveLocation) map.setCenter(rawPosition)
     }
-    if (followLiveLocation) { map.panTo(position); if (navigationRoute && (map.getZoom() ?? 0) < 17) map.setZoom(17) }
+    if (followLiveLocation && cameraFollowingRef.current) { map.panTo(position); if (navigationRoute && (map.getZoom() ?? 0) < 17) map.setZoom(17) }
   }, [destination, followLiveLocation, liveLocation, mapVersion, navigationRoute, origin, routes])
 
   useEffect(() => {
@@ -814,8 +830,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
 
   useEffect(() => () => { closeStreetView(); transitStopRequestRef.current += 1; transitStopControllerRef.current?.abort(); weatherMarkersRef.current.forEach((marker) => marker.setMap(null)); placeMarkersRef.current.forEach((marker) => marker.setMap(null)); transitStopMarkersRef.current.forEach((marker) => marker.setMap(null)); transitStopInfoWindowRef.current?.close(); placeInfoWindowRef.current?.close(); reportInfoWindowRef.current?.close(); checkpointOverlays.current.forEach((overlay) => overlay.setMap(null)); reportMarkers.current.forEach((marker) => marker.setMap(null)); locationMarkerRef.current?.setMap(null); accuracyCircleRef.current?.setMap(null) }, [closeStreetView])
 
-  const selectedRoute = routes.find((route) => route.id === selectedId) ?? routes[0]
-  return <div className="relative h-full min-h-[28rem] overflow-hidden bg-white"><div className="absolute inset-0" ref={nodeRef} aria-label={origin && destination ? `Map from ${origin.label} to ${destination.label}` : 'Jakarta route map'} />{reportPopupHost && selectedReport && reportPopup && <ReportPopupPortal host={reportPopupHost} report={selectedReport} render={reportPopup} onClose={closeReportPopup} />}{streetViewVisible && <button ref={streetViewCloseRef} type="button" onClick={closeStreetView} className="absolute top-3 right-3 z-30 min-h-11 rounded-lg bg-white px-4 text-sm font-black text-ae-ink shadow-lg">Close Street View</button>}{routes.length > 0 && <div className="absolute right-3 bottom-20 z-10 max-w-[calc(100%-1.5rem)] rounded-lg border border-ae-line bg-white/95 px-3 py-2 text-[10px] font-bold text-ae-muted shadow-lg backdrop-blur lg:right-auto lg:bottom-5 lg:left-5" role="group" aria-label="PM2.5 estimate"><strong className="mr-2 text-ae-ink">PM2.5 estimate</strong><span className="whitespace-nowrap"><i className="mr-1 inline-block size-2 rounded-full bg-[#0a9b68]" />≤15</span><span className="ml-2 whitespace-nowrap"><i className="mr-1 inline-block size-2 rounded-full bg-[#e6a51c]" />15–35</span><span className="ml-2 whitespace-nowrap"><i className="mr-1 inline-block size-2 rounded-full bg-[#c0442b]" />&gt;35</span><span className="ml-2 whitespace-nowrap"><i className="mr-1 inline-block size-2 rounded-full bg-[#7b8983]" />Unavailable</span>{selectedRoute?.dataQuality === 'partial_estimate' && <span className="ml-2 whitespace-nowrap">Partial coverage</span>}</div>}{status === 'loading' && <div className="absolute inset-0 grid place-items-center bg-white"><span className="inline-flex items-center gap-2 text-sm font-extrabold text-ae-brand"><LoaderCircle className="size-5 animate-spin" />Loading...</span></div>}{(status === 'unavailable' || status === 'error') && <div className="absolute inset-0 grid place-items-center bg-white p-6"><div className="text-center">{status === 'error' ? <TriangleAlert className="mx-auto size-8 text-ae-fastest" /> : <MapPinned className="mx-auto size-8 text-ae-brand" />}<strong className="mt-3 block text-base font-black">Map unavailable</strong></div></div>}</div>
+  return <div className="relative h-full min-h-[28rem] overflow-hidden bg-white"><div className="absolute inset-0" ref={nodeRef} aria-label={origin && destination ? `Peta dari ${origin.label} ke ${destination.label}` : 'Peta rute Jakarta'} />{reportPopupHost && selectedReport && reportPopup && <ReportPopupPortal host={reportPopupHost} report={selectedReport} render={reportPopup} onClose={closeReportPopup} />}{streetViewVisible && <button ref={streetViewCloseRef} type="button" onClick={closeStreetView} className="absolute top-[calc(max(.75rem,env(safe-area-inset-top))+4.5rem)] left-3 z-50 inline-flex min-h-11 items-center gap-2 rounded-xl border border-ae-line bg-white px-4 text-sm font-black text-ae-ink shadow-lg lg:left-5"><ArrowLeft className="size-4" aria-hidden="true" />Kembali ke peta</button>}{followLiveLocation && !cameraFollowing && !streetViewVisible && <button type="button" onClick={() => { const position = displayedLocationRef.current; if (!position || !mapRef.current) return; cameraFollowingRef.current = true; setCameraPausedSession(null); mapRef.current.panTo(position); if ((mapRef.current.getZoom() ?? 0) < 17) mapRef.current.setZoom(17) }} className="absolute right-3 bottom-24 z-20 inline-flex min-h-11 items-center gap-2 rounded-xl border border-ae-line bg-white px-4 text-sm font-black text-ae-brand shadow-lg lg:right-5 lg:bottom-5"><LocateFixed className="size-4" aria-hidden="true" />Fokus ke lokasi</button>}{status === 'loading' && <div className="absolute inset-0 grid place-items-center bg-white"><span className="inline-flex items-center gap-2 text-sm font-extrabold text-ae-brand"><LoaderCircle className="size-5 animate-spin" />Memuat...</span></div>}{(status === 'unavailable' || status === 'error') && <div className="absolute inset-0 grid place-items-center bg-white p-6"><div className="text-center">{status === 'error' ? <TriangleAlert className="mx-auto size-8 text-ae-fastest" /> : <MapPinned className="mx-auto size-8 text-ae-brand" />}<strong className="mt-3 block text-base font-black">Map unavailable</strong></div></div>}</div>
 }
 
 export const RoutePreviewMap = memo(RoutePreviewMapComponent)

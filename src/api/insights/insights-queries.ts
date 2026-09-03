@@ -1,6 +1,6 @@
 import { apiClient } from '@/config'
 import { API_ENDPOINTS } from '@/constants'
-import type { ApiResponse, SavedCommute, SavedCommuteInput, TripImpact, TripImpactSummary } from '@/types'
+import type { ApiResponse, SavedCommute, SavedCommuteInput, TripImpact } from '@/types'
 
 export async function getSavedCommutes(signal?: AbortSignal) {
   const response = await apiClient.get<ApiResponse<SavedCommute[]>>(API_ENDPOINTS.savedCommutes, { signal })
@@ -24,10 +24,5 @@ export async function deleteSavedCommute(id: string) {
 
 export async function recordTripImpact(input: { routeResultId: string }) {
   const response = await apiClient.post<ApiResponse<TripImpact>>(API_ENDPOINTS.tripImpacts, input)
-  return response.data.data
-}
-
-export async function getTripImpactSummary(signal?: AbortSignal) {
-  const response = await apiClient.get<ApiResponse<TripImpactSummary>>(API_ENDPOINTS.tripImpactSummary, { signal })
   return response.data.data
 }

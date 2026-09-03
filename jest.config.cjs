@@ -46,7 +46,6 @@ module.exports = {
     'src/pages/dashboard/components/PlannerPanel.tsx',
     'src/pages/dashboard/components/RoadReportDetailPanel.tsx',
     'src/pages/dashboard/components/RouteResultsPanel.tsx',
-    'src/pages/insights/InsightsPage.tsx',
   ],
   coverageReporters: ['text', 'html', 'lcov'],
   coverageThreshold: { global: { branches: 70, functions: 80, lines: 80, statements: 80 } },

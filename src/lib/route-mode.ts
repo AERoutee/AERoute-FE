@@ -1,6 +1,6 @@
 import type { DirectTravelMode, Place, PlannerRequest, RouteComparison, RouteComparisonTask, RouteOption, RouteTaskId, RouteView, SavedCommute, SavedCommuteInput, TransitMode, TransitSegment, TransitStop, TravelMode } from '@/types'
 
-const modeNames: Record<DirectTravelMode, string> = { WALK: 'Walk', BICYCLE: 'Cycle', BUS: 'Bus', TRAIN: 'Train', SUBWAY: 'Subway' }
+const modeNames: Record<DirectTravelMode, string> = { WALK: 'Jalan', BICYCLE: 'Sepeda', BUS: 'Bus', TRAIN: 'Kereta', SUBWAY: 'MRT' }
 const modeOrder: DirectTravelMode[] = ['WALK', 'BICYCLE', 'BUS', 'TRAIN', 'SUBWAY']
 const transitModes = new Set<DirectTravelMode>(['BUS', 'TRAIN', 'SUBWAY'])
 
@@ -27,7 +27,7 @@ export function itineraryModeRequests(modes: readonly DirectTravelMode[], common
   const { transitPreference, ...active } = common
   if (ordered.includes('BICYCLE') && transit.length) {
     const transitLabel = selectedModeLabel(transit)
-    const compositeLabel = `Cycle + ${transitLabel}${ordered.includes('WALK') ? ' + Walk' : ''}`
+    const compositeLabel = `Sepeda + ${transitLabel}${ordered.includes('WALK') ? ' + Jalan' : ''}`
     const transitRequest = { ...common, mode: 'TRANSIT' as const, transitModes: transit, transitPreference }
     return [
       { id: 'BIKE_TRANSIT', label: compositeLabel, selectedModes: ordered, request: { ...transitRequest, accessPlan: { firstMileMode: 'BICYCLE', lastMileMode: 'WALK', bicyclePlan: 'PARK_AT_FIRST_TRANSIT_STOP' }, departureOffsetsMinutes: [0], includeRestStops: false } },
@@ -35,8 +35,8 @@ export function itineraryModeRequests(modes: readonly DirectTravelMode[], common
     ]
   }
   if (ordered.includes('WALK') && ordered.includes('BICYCLE')) return [
-    { id: 'WALK', label: 'Walk', selectedModes: ['WALK'], request: { ...active, mode: 'WALK' } },
-    { id: 'BICYCLE', label: 'Cycle', selectedModes: ['BICYCLE'], request: { ...active, mode: 'BICYCLE' } },
+    { id: 'WALK', label: 'Jalan', selectedModes: ['WALK'], request: { ...active, mode: 'WALK' } },
+    { id: 'BICYCLE', label: 'Sepeda', selectedModes: ['BICYCLE'], request: { ...active, mode: 'BICYCLE' } },
   ]
   const config = directModeRequest(ordered)
   return [{ id: config.mode, label: config.label, selectedModes: ordered, request: { ...active, mode: config.mode, ...(config.mode === 'TRANSIT' ? { transitModes: config.transitModes, transitPreference } : {}) } }]

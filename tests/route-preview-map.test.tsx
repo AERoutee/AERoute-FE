@@ -49,8 +49,9 @@ const panorama = {
   setPov: panoramaSetPov,
   setVisible: panoramaSetVisible,
 }
+const mapListeners: Record<string, () => void> = {}
 const map = {
-  addListener: jest.fn(() => ({ remove: jest.fn() })),
+  addListener: jest.fn((event: string, callback: () => void) => { mapListeners[event] = callback; return { remove: jest.fn() } }),
   getBounds: jest.fn(() => null),
   getCenter: jest.fn(() => ({ lat: () => -6.2, lng: () => 106.8 })),
   getStreetView: jest.fn(() => panorama),
@@ -74,6 +75,7 @@ beforeAll(() => {
 beforeEach(() => {
   jest.clearAllMocks()
   markerListeners.length = 0
+  for (const event of Object.keys(mapListeners)) delete mapListeners[event]
   infoWindows.length = 0
   streetViewOrder.length = 0
   panoramaGetStatus.mockReturnValue('UNKNOWN_ERROR')
@@ -167,20 +169,26 @@ describe('RoutePreviewMap initial camera', () => {
     expect(setCenter).not.toHaveBeenCalled()
   })
 
-  it('renders a semantic PM2.5 legend only with routes and uses AQ polyline colors', async () => {
+  it('pauses camera follow after dragging and resumes from the location control', async () => {
+    const route = { ...routeOption(), encodedPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@' }
+    render(<RoutePreviewMap origin={null} destination={null} routes={[route]} liveLocation={firstLocation} followLiveLocation navigationRoute={route} />)
+    await finishMapLoad()
+    await waitFor(() => expect(panTo).toHaveBeenCalled())
+    act(() => mapListeners.dragstart?.())
+    const focus = screen.getByRole('button', { name: 'Fokus ke lokasi' })
+    await userEvent.click(focus)
+    expect(panTo).toHaveBeenCalledTimes(2)
+    expect(screen.queryByRole('button', { name: 'Fokus ke lokasi' })).not.toBeInTheDocument()
+  })
+
+  it('keeps PM2.5 colors on route segments without rendering a floating legend', async () => {
     const route = { ...routeOption(), encodedPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@', dataQuality: 'partial_estimate' as const, airQualitySampleCount: 2, airQualityExpectedSampleCount: 3, airQualitySamples: [{ latitude: 38.5, longitude: -120.2, pm25: 10 }, { latitude: 43.252, longitude: -126.453, pm25: 40 }] }
-    const view = render(<RoutePreviewMap origin={null} destination={null} routes={[route]} selectedId={route.id} />)
-    expect(screen.getByRole('group', { name: 'PM2.5 estimate' })).toHaveTextContent('≤15')
-    expect(screen.getByRole('group', { name: 'PM2.5 estimate' })).toHaveTextContent('15–35')
-    expect(screen.getByRole('group', { name: 'PM2.5 estimate' })).toHaveTextContent('>35')
-    expect(screen.getByRole('group', { name: 'PM2.5 estimate' })).toHaveTextContent('Unavailable')
-    expect(screen.getByRole('group', { name: 'PM2.5 estimate' })).toHaveTextContent('Partial coverage')
+    render(<RoutePreviewMap origin={null} destination={null} routes={[route]} selectedId={route.id} />)
+    expect(screen.queryByRole('group', { name: 'PM2.5 estimate' })).not.toBeInTheDocument()
     await finishMapLoad()
     const Polyline = google.maps.Polyline as unknown as jest.Mock
     await waitFor(() => expect(Polyline.mock.calls.some(([options]) => options.strokeColor === '#0a9b68')).toBe(true))
     expect(Polyline.mock.calls.some(([options]) => options.strokeColor === '#c0442b')).toBe(true)
-    view.rerender(<RoutePreviewMap origin={null} destination={null} routes={[]} />)
-    expect(screen.queryByRole('group', { name: 'PM2.5 estimate' })).not.toBeInTheDocument()
   })
 
   it('opens one controlled React report popup anchored to the marker and closes it', async () => {
@@ -294,16 +302,16 @@ describe('RoutePreviewMap initial camera', () => {
     const positive = infoWindowSetContent.mock.calls[0][0] as HTMLElement
     expect(positive.querySelector('.aeroute-place-grid')?.children).toHaveLength(2)
     expect(positive.querySelector('.aeroute-place-primary')).toHaveTextContent('Main Street')
-    expect(positive.querySelector('.aeroute-place-facilities')).toHaveTextContent('Open status Open nowToilet Not listedEntrance AvailableParking AvailableRestroom AvailableSeating Available')
-    for (const field of ['Rest-stop candidate', 'Park', 'Main Street', 'Open status Open now', 'Toilet Not listed', 'Entrance Available', 'Parking Available', 'Restroom Available', 'Seating Available']) expect(positive).toHaveTextContent(field)
+    expect(positive.querySelector('.aeroute-place-facilities')).toHaveTextContent('Status buka Buka sekarangToilet Tidak tercantumPintu masuk TersediaParkir TersediaToilet aksesibel TersediaTempat duduk Tersedia')
+    for (const field of ['Kandidat tempat istirahat', 'Park', 'Main Street', 'Status buka Buka sekarang', 'Toilet Tidak tercantum', 'Pintu masuk Tersedia', 'Parkir Tersedia', 'Toilet aksesibel Tersedia', 'Tempat duduk Tersedia']) expect(positive).toHaveTextContent(field)
     expect(positive).not.toHaveTextContent('Open in Google Maps')
     expect(Array.from(positive.querySelectorAll('img')).map((image) => image.getAttribute('src'))).toEqual(expect.arrayContaining(['toilet.png', 'door.png', 'parking.png', 'chair.png']))
 
     markerListeners[1].click()
     const unknown = infoWindowSetContent.mock.calls[1][0] as HTMLElement
-    for (const field of ['Cafe', 'Address unknown', 'Open status Unknown', 'Toilet Unknown', 'Entrance Unknown', 'Parking Unknown', 'Restroom Unknown', 'Seating Unknown']) expect(unknown).toHaveTextContent(field)
+    for (const field of ['Cafe', 'Alamat tidak diketahui', 'Status buka Tidak diketahui', 'Toilet Tidak diketahui', 'Pintu masuk Tidak diketahui', 'Parkir Tidak diketahui', 'Toilet aksesibel Tidak diketahui', 'Tempat duduk Tidak diketahui']) expect(unknown).toHaveTextContent(field)
     expect((infoWindowSetContent.mock.calls[1][0] as HTMLElement).textContent).not.toMatch(/safe route|fully accessible/i)
-    await userEvent.click(within(unknown).getByRole('button', { name: 'Close place details' }))
+    await userEvent.click(within(unknown).getByRole('button', { name: 'Tutup detail tempat' }))
     expect(infoWindowClose).toHaveBeenCalled()
   })
 
@@ -314,37 +322,37 @@ describe('RoutePreviewMap initial camera', () => {
     markerListeners.find((listeners) => listeners.click)?.click()
     const content = infoWindowSetContent.mock.calls[0][0] as HTMLElement
     document.body.append(content)
-    expect(content.querySelectorAll('img[alt^="Station Park photo"]')).toHaveLength(1)
-    expect(within(content).getByAltText('Station Park photo 1')).toHaveAttribute('width', '16')
-    expect(within(content).getByAltText('Station Park photo 1')).toHaveAttribute('height', '9')
-    expect(within(content).getByText('1 of 3')).toBeTruthy()
-    expect(within(content).getAllByRole('button', { name: /show photo/i })).toHaveLength(3)
+    expect(content.querySelectorAll('img[alt^="Station Park foto"]')).toHaveLength(1)
+    expect(within(content).getByAltText('Station Park foto 1')).toHaveAttribute('width', '16')
+    expect(within(content).getByAltText('Station Park foto 1')).toHaveAttribute('height', '9')
+    expect(within(content).getByText('1 dari 3')).toBeTruthy()
+    expect(within(content).getAllByRole('button', { name: /tampilkan foto/i })).toHaveLength(3)
     expect(content).toHaveTextContent('Contributor 1')
     expect(within(content).queryByRole('link', { name: 'View photo on Google Maps' })).not.toBeInTheDocument()
     expect(within(content).queryByRole('link', { name: 'Report photo' })).not.toBeInTheDocument()
     expect(content.querySelector('a[href="https://evil.example/person"]')).not.toBeInTheDocument()
 
-    await userEvent.click(within(content).getByRole('button', { name: 'Next photo' }))
+    await userEvent.click(within(content).getByRole('button', { name: 'Foto berikutnya' }))
     await Promise.resolve()
-    expect(within(content).getByAltText('Station Park photo 2')).toBeTruthy()
-    expect(within(content).getByText('2 of 3')).toBeTruthy()
-    expect(document.activeElement).toBe(within(content).getByRole('button', { name: 'Next photo' }))
+    expect(within(content).getByAltText('Station Park foto 2')).toBeTruthy()
+    expect(within(content).getByText('2 dari 3')).toBeTruthy()
+    expect(document.activeElement).toBe(within(content).getByRole('button', { name: 'Foto berikutnya' }))
     expect(document.activeElement?.isConnected).toBe(true)
-    await userEvent.click(within(content).getByRole('button', { name: 'Next photo' }))
+    await userEvent.click(within(content).getByRole('button', { name: 'Foto berikutnya' }))
     await Promise.resolve()
-    expect(document.activeElement).toBe(within(content).getByRole('button', { name: 'Next photo' }))
+    expect(document.activeElement).toBe(within(content).getByRole('button', { name: 'Foto berikutnya' }))
     expect(document.activeElement?.isConnected).toBe(true)
     content.querySelector('[data-place-gallery]')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
     await Promise.resolve()
-    expect(within(content).getByAltText('Station Park photo 1')).toBeTruthy()
+    expect(within(content).getByAltText('Station Park foto 1')).toBeTruthy()
     expect(content.querySelector('[data-place-gallery]')).toContainElement(document.activeElement as HTMLElement)
     expect(document.activeElement?.isConnected).toBe(true)
-    await userEvent.click(within(content).getByRole('button', { name: 'Previous photo' }))
-    const failed = within(content).getByAltText('Station Park photo 3')
+    await userEvent.click(within(content).getByRole('button', { name: 'Foto sebelumnya' }))
+    const failed = within(content).getByAltText('Station Park foto 3')
     failed.dispatchEvent(new Event('error'))
-    expect(within(content).getByAltText('Station Park photo 2')).toHaveAttribute('src', expect.stringContaining('AUac2'))
+    expect(within(content).getByAltText('Station Park foto 2')).toHaveAttribute('src', expect.stringContaining('AUac2'))
     expect(content).toHaveTextContent('Contributor 2')
-    expect(within(content).getByText('2 of 2')).toBeTruthy()
+    expect(within(content).getByText('2 dari 2')).toBeTruthy()
     content.remove()
   })
 
@@ -354,10 +362,10 @@ describe('RoutePreviewMap initial camera', () => {
     await finishMapLoad()
     markerListeners[0].click()
     const content = infoWindowSetContent.mock.calls[0][0] as HTMLElement
-    expect(within(content).getByAltText('Solo Park photo 1')).toBeTruthy()
-    expect(within(content).queryByRole('button', { name: 'Next photo' })).not.toBeInTheDocument()
-    expect(within(content).queryByRole('button', { name: /show photo/i })).not.toBeInTheDocument()
-    within(content).getByAltText('Solo Park photo 1').dispatchEvent(new Event('error'))
+    expect(within(content).getByAltText('Solo Park foto 1')).toBeTruthy()
+    expect(within(content).queryByRole('button', { name: 'Foto berikutnya' })).not.toBeInTheDocument()
+    expect(within(content).queryByRole('button', { name: /tampilkan foto/i })).not.toBeInTheDocument()
+    within(content).getByAltText('Solo Park foto 1').dispatchEvent(new Event('error'))
     expect(content.querySelector('[data-place-gallery]')).not.toBeInTheDocument()
   })
 
@@ -367,27 +375,27 @@ describe('RoutePreviewMap initial camera', () => {
     await finishMapLoad()
     markerListeners[0].click()
     const content = infoWindowSetContent.mock.calls[0][0] as HTMLElement
-    await userEvent.click(within(content).getByRole('button', { name: 'Next photo' }))
-    await userEvent.click(within(content).getByRole('button', { name: 'Open photo 2' }))
-    const dialog = screen.getByRole('dialog', { name: 'Gallery Park photo' })
-    expect(within(dialog).getByText('2 of 3')).toBeInTheDocument()
-    expect(within(dialog).getByAltText('Gallery Park photo 2')).toBeInTheDocument()
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Next photo' }))
+    await userEvent.click(within(content).getByRole('button', { name: 'Foto berikutnya' }))
+    await userEvent.click(within(content).getByRole('button', { name: 'Buka foto 2' }))
+    const dialog = screen.getByRole('dialog', { name: 'Gallery Park foto' })
+    expect(within(dialog).getByText('2 dari 3')).toBeInTheDocument()
+    expect(within(dialog).getByAltText('Gallery Park foto 2')).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Foto berikutnya' }))
     await Promise.resolve()
-    expect(within(dialog).getByAltText('Gallery Park photo 3')).toBeInTheDocument()
-    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Next photo' }))
+    expect(within(dialog).getByAltText('Gallery Park foto 3')).toBeInTheDocument()
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Foto berikutnya' }))
     expect(document.activeElement?.isConnected).toBe(true)
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Next photo' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Foto berikutnya' }))
     await Promise.resolve()
-    expect(within(dialog).getByAltText('Gallery Park photo 1')).toBeInTheDocument()
-    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Next photo' }))
+    expect(within(dialog).getByAltText('Gallery Park foto 1')).toBeInTheDocument()
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Foto berikutnya' }))
     await userEvent.keyboard('{ArrowRight}')
     await Promise.resolve()
-    expect(within(dialog).getByAltText('Gallery Park photo 2')).toBeInTheDocument()
+    expect(within(dialog).getByAltText('Gallery Park foto 2')).toBeInTheDocument()
     expect(dialog).toContainElement(document.activeElement as HTMLElement)
     expect(document.activeElement?.isConnected).toBe(true)
     await userEvent.keyboard('{Escape}')
-    expect(screen.queryByRole('dialog', { name: 'Gallery Park photo' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Gallery Park foto' })).not.toBeInTheDocument()
   })
 
   it('shows Street View immediately, resizes it, and closes from the map overlay', async () => {
@@ -397,17 +405,17 @@ describe('RoutePreviewMap initial camera', () => {
     await finishMapLoad()
     markerListeners.find((listeners) => listeners.click)?.click()
     const content = infoWindowSetContent.mock.calls[0][0] as HTMLElement
-    await userEvent.click(await within(content).findByRole('button', { name: 'View 360°' }))
+    await userEvent.click(await within(content).findByRole('button', { name: 'Lihat 360°' }))
     expect(streetViewOrder).toEqual(['listen:visible_changed', 'setPano'])
     expect(panoramaSetPano).toHaveBeenCalledWith('pano-1')
     expect(panoramaSetPov).toHaveBeenCalledWith({ heading: 0, pitch: 0 })
     expect(panoramaSetVisible).toHaveBeenCalledWith(true)
     expect(google.maps.event.trigger).toHaveBeenCalledWith(panorama, 'resize')
-    const close = await screen.findByRole('button', { name: 'Close Street View' })
-    expect(close).toHaveClass('min-h-11')
+    const close = await screen.findByRole('button', { name: 'Kembali ke peta' })
+    expect(close).toHaveClass('min-h-11', 'z-50')
     resizeObserverCallback?.([{ contentRect: { width: 800, height: 600 } } as ResizeObserverEntry], {} as ResizeObserver)
     expect(google.maps.event.trigger).toHaveBeenCalledWith(panorama, 'resize')
-    await userEvent.click(close)
+    await userEvent.keyboard('{Escape}')
     expect(panoramaSetVisible).toHaveBeenCalledWith(false)
     expect(google.maps.event.trigger).toHaveBeenCalledWith(map, 'resize')
   })
@@ -419,8 +427,8 @@ describe('RoutePreviewMap initial camera', () => {
     markerListeners[0].click()
     const content = infoWindowSetContent.mock.calls[0][0] as HTMLElement
     await waitFor(() => expect(streetViewGetPanorama).toHaveBeenCalledTimes(1))
-    expect(within(content).queryByRole('button', { name: 'View 360°' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Close Street View' })).not.toBeInTheDocument()
+    expect(within(content).queryByRole('button', { name: 'Lihat 360°' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Kembali ke peta' })).not.toBeInTheDocument()
   })
 
   it('uses distinct static pictograms and vehicle-specific titles for transit markers', async () => {
@@ -449,26 +457,26 @@ describe('RoutePreviewMap initial camera', () => {
     const markerIndex = Marker.mock.calls.findIndex(([options]) => options.title === 'BUS stop: Central')
     markerListeners[markerIndex].click()
     const loading = infoWindowSetContent.mock.calls.at(-1)![0] as HTMLElement
-    expect(loading).toHaveTextContent('Transit stopCentralDeparture · Stop 1 · BUS · 7 · toward ParkLoading Google Places details…')
+    expect(loading).toHaveTextContent('Perhentian transitCentralKeberangkatan · Perhentian 1 · BUS · 7 · menuju ParkMemuat detail Google Places…')
     expect(getStopDetails).toHaveBeenCalledWith(stop, 'route-result-1', expect.any(AbortSignal))
     expect(streetViewGetPanorama).not.toHaveBeenCalled()
 
     await act(async () => resolveDetails({ status: 'AVAILABLE', place: { id: 'central', name: 'Central Station', formattedAddress: 'Rail Street', location: stop.location, types: ['bus_station'], openNow: false, restroom: true, accessibility: { wheelchairAccessibleEntrance: true, wheelchairAccessibleParking: false, wheelchairAccessibleRestroom: false, wheelchairAccessibleSeating: true }, parkingOptions: { paidParkingLot: true }, googleMapsUri: 'https://www.google.com/maps/place/central', photos: [{ name: 'places/ChIJ123/photos/AUac123', authorAttributions: [{ displayName: 'Google Contributor', uri: 'https://www.google.com/maps/contrib/123' }, { displayName: 'External Contributor', uri: 'https://evil.example/person' }] }], safetyVerified: false } }))
     expect(streetViewGetPanorama).toHaveBeenCalledTimes(1)
     const available = infoWindowSetContent.mock.calls.at(-1)![0] as HTMLElement
-    for (const text of ['Transit stop', 'Central', 'Rail Street', 'Open status Closed', 'Toilet Available', 'Parking Available', 'Entrance Available', 'Accessible restroom Not available', 'Accessible seating Available', 'Accessibility information available', 'Google Maps accessibility information; not a step-free guarantee.']) expect(available).toHaveTextContent(text)
+    for (const text of ['Perhentian transit', 'Central', 'Rail Street', 'Status buka Tutup', 'Toilet Tersedia', 'Parkir Tersedia', 'Pintu masuk Tersedia', 'Toilet aksesibel Tidak tersedia', 'Tempat duduk aksesibel Tersedia', 'Informasi aksesibilitas tersedia', 'Informasi aksesibilitas dari Google Maps; bukan jaminan rute bebas tangga.']) expect(available).toHaveTextContent(text)
     expect(available).not.toHaveTextContent('Open in Google Maps')
     expect(available).not.toHaveTextContent(/safety/i)
     expect(available.querySelector('a[href="https://evil.example/person"]')).not.toBeInTheDocument()
-    const image = available.querySelector('img[alt="Central Station photo 1"]')
+    const image = available.querySelector('img[alt="Central Station foto 1"]')
     expect(image).toHaveAttribute('src', expect.stringContaining('/api/v1/place-photos'))
     image?.dispatchEvent(new Event('error'))
-    expect(available.querySelector('img[alt="Central Station photo 1"]')).not.toBeInTheDocument()
+    expect(available.querySelector('img[alt="Central Station foto 1"]')).not.toBeInTheDocument()
   })
 
   it.each([
-    [{ status: 'NOT_FOUND' }, 'No Google Places details found.'],
-    [new Error('Unavailable'), 'Transit stop details are temporarily unavailable.'],
+    [{ status: 'NOT_FOUND' }, 'Detail Google Places tidak ditemukan.'],
+    [new Error('Unavailable'), 'Detail perhentian transit sementara tidak tersedia.'],
   ])('retains base transit stop content for unavailable details', async (result, message) => {
     if (result instanceof Error) getStopDetails.mockRejectedValue(result)
     else getStopDetails.mockResolvedValue(result)
@@ -479,7 +487,7 @@ describe('RoutePreviewMap initial camera', () => {
     markerListeners[Marker.mock.calls.findIndex(([options]) => options.title === 'BUS stop: Central')].click()
     await waitFor(() => expect(infoWindowSetContent.mock.calls.at(-1)![0]).toHaveTextContent(message))
     expect(streetViewGetPanorama).toHaveBeenCalledTimes(1)
-    expect(infoWindowSetContent.mock.calls.at(-1)![0]).toHaveTextContent('CentralDeparture · Stop 1 · BUS · 7 · toward Park')
+    expect(infoWindowSetContent.mock.calls.at(-1)![0]).toHaveTextContent('CentralKeberangkatan · Perhentian 1 · BUS · 7 · menuju Park')
   })
 
   it('aborts transit details on close, another marker, route change, and unmount, then refetches on reopen', async () => {

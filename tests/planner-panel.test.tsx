@@ -39,9 +39,9 @@ describe('PlannerPanel direct mode controls', () => {
 
   it('offers five checkbox choices in one equal compact row with preference guidance', () => {
     const { container } = render(<PlannerPanel {...props} />)
-    for (const name of ['Walk', 'Cycle', 'Bus', 'Train', 'Subway']) expect(screen.getByRole('checkbox', { name })).toBeInTheDocument()
-    expect(screen.getByText('Choose up to 3 modes. Available combinations will be shown.')).toBeInTheDocument()
-    const grid = screen.getByRole('checkbox', { name: 'Walk' }).closest('div')
+    for (const name of ['Jalan', 'Sepeda', 'Bus', 'Kereta', 'MRT']) expect(screen.getByRole('checkbox', { name })).toBeInTheDocument()
+    expect(screen.getByText('Pilih maksimal 3 moda. Kombinasi yang tersedia akan ditampilkan.')).toBeInTheDocument()
+    const grid = screen.getByRole('checkbox', { name: 'Jalan' }).closest('div')
     expect(grid).toHaveClass('grid-cols-5', 'gap-1.5')
     for (const checkbox of screen.getAllByRole('checkbox').slice(0, 5)) {
       expect(checkbox.closest('label')).toHaveClass('min-w-0', 'min-h-13', 'flex-col', 'text-[11px]')
@@ -51,55 +51,55 @@ describe('PlannerPanel direct mode controls', () => {
 
   it('keeps one mode, allows bicycle with transit, and disables unchecked modes at three', async () => {
     const view = render(<PlannerPanel {...props} />)
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Walk' }))
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Jalan' }))
     expect(props.onSelectedModesChange).not.toHaveBeenCalled()
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Cycle' }))
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Sepeda' }))
     expect(props.onSelectedModesChange).toHaveBeenLastCalledWith(['WALK', 'BICYCLE'])
 
     view.rerender(<PlannerPanel {...props} selectedModes={['WALK', 'BICYCLE']} />)
-    for (const transit of ['Bus', 'Train', 'Subway']) expect(screen.getByRole('checkbox', { name: transit })).toBeEnabled()
+    for (const transit of ['Bus', 'Kereta', 'MRT']) expect(screen.getByRole('checkbox', { name: transit })).toBeEnabled()
 
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Train' }))
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Kereta' }))
     expect(props.onSelectedModesChange).toHaveBeenLastCalledWith(['WALK', 'BICYCLE', 'TRAIN'])
 
     view.rerender(<PlannerPanel {...props} selectedModes={['WALK', 'BICYCLE', 'TRAIN']} />)
     expect(screen.getByRole('checkbox', { name: 'Bus' })).toBeDisabled()
-    expect(screen.getByRole('checkbox', { name: 'Subway' })).toBeDisabled()
-    expect(screen.getByRole('checkbox', { name: 'Walk' })).toBeEnabled()
+    expect(screen.getByRole('checkbox', { name: 'MRT' })).toBeDisabled()
+    expect(screen.getByRole('checkbox', { name: 'Jalan' })).toBeEnabled()
   })
 
   it('shows only transit priority when an itinerary includes transit', () => {
     render(<PlannerPanel {...props} selectedModes={['WALK', 'BUS']} />)
-    expect(screen.queryByText('Active route priority')).not.toBeInTheDocument()
-    expect(screen.queryByRole('radio', { name: 'Balanced' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('radio', { name: 'Lower exposure' })).not.toBeInTheDocument()
-    expect(screen.getByText('Transit priority')).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'Less walking' })).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'Fewer transfers' })).toBeInTheDocument()
-    expect(screen.getByText('Less walking').closest('label')?.querySelector('img')).toHaveAttribute('src', 'walking.png')
-    expect(screen.getByText('Fewer transfers').closest('label')?.querySelector('img')).toHaveAttribute('src', 'compare.png')
+    expect(screen.queryByText('Prioritas rute aktif')).not.toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: 'Seimbang' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: 'Paparan lebih rendah' })).not.toBeInTheDocument()
+    expect(screen.getByText('Prioritas transit')).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Lebih sedikit berjalan' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Lebih sedikit transit' })).toBeInTheDocument()
+    expect(screen.getByText('Lebih sedikit berjalan').closest('label')?.querySelector('img')).toHaveAttribute('src', 'walking.png')
+    expect(screen.getByText('Lebih sedikit transit').closest('label')?.querySelector('img')).toHaveAttribute('src', 'compare.png')
   })
 
   it.each([[['WALK']], [['BICYCLE']]] as const)('shows active priority for %s alone', (selectedModes) => {
     render(<PlannerPanel {...props} selectedModes={selectedModes} />)
-    expect(screen.getByText('Active route priority')).toBeInTheDocument()
-    expect(screen.queryByText('Transit priority')).not.toBeInTheDocument()
+    expect(screen.getByText('Prioritas rute aktif')).toBeInTheDocument()
+    expect(screen.queryByText('Prioritas transit')).not.toBeInTheDocument()
   })
 
   it('uses one-comparison submit copy and keeps the desktop drag target wide', () => {
     const view = render(<PlannerPanel {...props} />)
-    expect(screen.getAllByRole('button', { name: 'Compare routes' })).toHaveLength(2)
-    const drag = screen.getByRole('button', { name: 'Drag planner panel' })
+    expect(screen.getAllByRole('button', { name: 'Bandingkan rute' })).toHaveLength(2)
+    const drag = screen.getByRole('button', { name: 'Geser panel perencana' })
     expect(drag).toHaveClass('flex-1')
-    expect(drag).toHaveTextContent('Where are you going?')
+    expect(drag).toHaveTextContent('Mau pergi ke mana?')
     view.rerender(<PlannerPanel {...props} selectedModes={['WALK', 'BUS']} />)
-    expect(screen.getAllByRole('button', { name: 'Compare routes' })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: 'Bandingkan rute' })).toHaveLength(2)
     expect(screen.queryByText('Walking access and transfers are included.')).not.toBeInTheDocument()
   })
 
   it('labels reduced exertion as an approximation', () => {
     render(<PlannerPanel {...props} />)
-    expect(screen.getByRole('checkbox', { name: 'Reduced exertion' })).toBeInTheDocument()
-    expect(screen.getByText(/does not verify wheelchair or step-free access/i)).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Usaha lebih ringan' })).toBeInTheDocument()
+    expect(screen.getByText(/tidak memverifikasi akses kursi roda atau rute bebas tangga/i)).toBeInTheDocument()
   })
 })

@@ -10,7 +10,6 @@ describe('API endpoint constants', () => {
       roadReportsMine: '/api/v1/road-reports/mine',
       savedCommutes: '/api/v1/saved-commutes',
       tripImpacts: '/api/v1/trip-impacts',
-      tripImpactSummary: '/api/v1/trip-impacts/summary',
     })
     expect(API_ENDPOINTS.roadReportVerification('report')).toBe('/api/v1/road-reports/report/verification')
     expect(API_ENDPOINTS.roadReport('report')).toBe('/api/v1/road-reports/report')

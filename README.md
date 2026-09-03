@@ -386,11 +386,10 @@ npx prisma validate
 3. Pengguna lain dapat **Confirm**, **Dispute**, atau menarik verification; pemilik dapat resolve report miliknya.
 4. Evidence score menggabungkan recency, foto, dan confirmation balance; skor bukan bukti kebenaran atau keselamatan.
 
-#### Insights dan Offline
+#### Dampak Perjalanan dan Offline
 
-1. Setelah perjalanan, konfirmasi pencatatan modeled trip impact dari persisted route result; **Recorded trips** adalah planned/model estimate, bukan GPS trace.
-2. Buka route **`/insights`** melalui menu **Insights** untuk melihat modeled impact summary. Insights saat ini hanya memodelkan impact; Saved Commute tetap kompatibel di backend, tetapi UI pembuatan, pengelolaan, dan watch telah dihapus.
-3. Saat offline, PWA hanya menampilkan reduced summary terakhir hingga 24 jam; koordinat dan identitas pengguna tidak disimpan pada summary tersebut.
+1. Setelah perjalanan, konfirmasi pencatatan modeled trip impact dari persisted route result; catatan ini adalah estimasi model, bukan GPS trace.
+2. Saat offline, PWA hanya menampilkan reduced summary terakhir hingga 24 jam; koordinat dan identitas pengguna tidak disimpan pada summary tersebut.
 
 ---
 

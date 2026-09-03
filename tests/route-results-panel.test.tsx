@@ -15,7 +15,6 @@ const handlers = {
   onDesktopDragEnd: jest.fn(),
   onDesktopDragKeyDown: jest.fn(),
 }
-const { onStartNavigation: _onStartNavigation, ...handlersWithoutNavigation } = handlers
 
 beforeEach(() => jest.clearAllMocks())
 
@@ -27,12 +26,12 @@ describe('RouteResultsPanel single itinerary', () => {
     const groups = [{ task: { id: 'TRANSIT', label: 'Walk + Bus', selectedModes: ['WALK', 'BUS'] as const, request }, status: 'success' as const, comparison }]
     render(<RouteResultsPanel groups={groups} selected={routes[0]} canStartNavigation={false} {...handlers} />)
     expect(screen.queryByRole('heading', { name: 'Walk + Bus' })).not.toBeInTheDocument()
-    expect(screen.getByRole('list', { name: 'Walk + Bus route options' })).toBeInTheDocument()
-    expect(screen.getAllByText('Recommended')).toHaveLength(1)
-    expect(screen.getByRole('heading', { name: 'Trip insights' })).toBeInTheDocument()
-    for (const label of ['Best departure', 'Break', 'Evidence', 'Reports']) expect(screen.getByText(label)).toBeInTheDocument()
-    expect(screen.getByText('Consider a break · 36.0°C / UV 9')).toBeInTheDocument()
-    expect(screen.getByText('1 report signal nearby')).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Pilihan rute Walk + Bus' })).toBeInTheDocument()
+    expect(screen.getAllByText('Direkomendasikan')).toHaveLength(1)
+    expect(screen.getByRole('heading', { name: 'Ringkasan perjalanan' })).toBeInTheDocument()
+    for (const label of ['Waktu terbaik', 'Istirahat', 'Bukti', 'Laporan']) expect(screen.getByText(label)).toBeInTheDocument()
+    expect(screen.getByText('Pertimbangkan istirahat · 36.0°C / UV 9')).toBeInTheDocument()
+    expect(screen.getByText('1 sinyal laporan di sekitar')).toBeInTheDocument()
     expect(screen.queryByText('Sources and timestamps')).not.toBeInTheDocument()
     expect(screen.queryByText('Rest-stop candidates')).not.toBeInTheDocument()
     expect(screen.queryByText('Cleanest departure')).not.toBeInTheDocument()
@@ -44,9 +43,9 @@ describe('RouteResultsPanel single itinerary', () => {
     const routes = routeViews('WALK', ['WALK'], request, comparison)
     const groups = [{ task: { id: 'WALK', label: 'Walk', selectedModes: ['WALK'] as const, request }, status: 'success' as const, comparison }]
     render(<RouteResultsPanel groups={groups} selected={routes[0]} canStartNavigation={false} {...handlers} />)
-    expect(screen.getByText('Why this route').closest('details')).not.toHaveAttribute('open')
-    expect(screen.getByText('Warnings').closest('details')).not.toHaveAttribute('open')
-    expect(screen.queryByRole('heading', { name: 'Accessibility approximation' })).not.toBeInTheDocument()
+    expect(screen.getByText('Mengapa rute ini').closest('details')).not.toHaveAttribute('open')
+    expect(screen.getByText('Peringatan').closest('details')).not.toHaveAttribute('open')
+    expect(screen.queryByRole('heading', { name: 'Perkiraan aksesibilitas' })).not.toBeInTheDocument()
   })
 
   it('renders Walk and Cycle independently with a group-specific partial error and retry', async () => {
@@ -59,8 +58,8 @@ describe('RouteResultsPanel single itinerary', () => {
     ]
     render(<RouteResultsPanel groups={groups} selected={routeViews('WALK', ['WALK'], request, comparison)[0]} canStartNavigation={false} {...handlers} />)
     expect(screen.getByRole('heading', { name: 'Walk' })).toBeInTheDocument()
-    expect(screen.getByRole('alert')).toHaveTextContent('Cycle route failed')
-    await userEvent.click(screen.getByRole('button', { name: 'Retry Cycle route' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Cycle gagal')
+    await userEvent.click(screen.getByRole('button', { name: 'Coba lagi rute Cycle' }))
     expect(handlers.onRetry).toHaveBeenCalledWith('BICYCLE')
   })
 
@@ -74,7 +73,7 @@ describe('RouteResultsPanel single itinerary', () => {
     render(<RouteResultsPanel groups={groups} selected={routeViews('WALK', ['WALK'], walkRequest, groups[0].comparison)[0]} canStartNavigation={false} {...handlers} />)
     expect(screen.getByRole('heading', { name: 'Walk' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Cycle' })).toBeInTheDocument()
-    expect(screen.getAllByText('Recommended')).toHaveLength(2)
+    expect(screen.getAllByText('Direkomendasikan')).toHaveLength(2)
   })
 
   it('silently shows native transit when a composite connection is unavailable', () => {
@@ -87,7 +86,7 @@ describe('RouteResultsPanel single itinerary', () => {
     render(<RouteResultsPanel groups={groups} selected={routeViews('TRANSIT_FALLBACK', ['TRAIN'], request, fallback)[0]} canStartNavigation={false} {...handlers} />)
     expect(screen.queryByText('Bike connection unavailable; showing transit option.')).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Train' })).not.toBeInTheDocument()
-    expect(screen.getByRole('list', { name: 'Train route options' })).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Pilihan rute Train' })).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
@@ -101,9 +100,9 @@ describe('RouteResultsPanel single itinerary', () => {
     ]
     render(<RouteResultsPanel groups={groups} selected={routeViews('BIKE_TRANSIT', ['BICYCLE', 'TRAIN'], groups[0].task.request, composite)[0]} canStartNavigation={false} {...handlers} />)
     expect(screen.queryByRole('heading', { name: 'Cycle + Train' })).not.toBeInTheDocument()
-    expect(screen.getByRole('list', { name: 'Cycle + Train route options' })).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Pilihan rute Cycle + Train' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Train fallback' })).not.toBeInTheDocument()
-    expect(screen.getAllByText('Recommended')).toHaveLength(1)
+    expect(screen.getAllByText('Direkomendasikan')).toHaveLength(1)
   })
 
   it('hides a fallback error when the composite succeeds', () => {
@@ -126,7 +125,7 @@ describe('RouteResultsPanel single itinerary', () => {
     ]
     render(<RouteResultsPanel groups={groups} selected={routeViews('TRANSIT_FALLBACK', ['TRAIN'], request, fallback)[0]} canStartNavigation={false} {...handlers} />)
     expect(screen.getByRole('alert')).toHaveTextContent('Route provider unavailable.')
-    expect(screen.getByRole('button', { name: 'Retry Cycle + Train route' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Coba lagi rute Cycle + Train' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Train' })).toBeInTheDocument()
     expect(screen.queryByText('Bike connection unavailable; showing transit option.')).not.toBeInTheDocument()
   })
@@ -144,8 +143,8 @@ describe('RouteResultsPanel single itinerary', () => {
     const request = { ...plannerRequest('TRAIN'), accessPlan: { firstMileMode: 'BICYCLE' as const, lastMileMode: 'WALK' as const, bicyclePlan: 'PARK_AT_FIRST_TRANSIT_STOP' as const } }
     const groups = [{ task: { id: 'BIKE_TRANSIT' as const, label: 'Cycle + Train', selectedModes: ['BICYCLE', 'TRAIN'] as const, request }, status: 'success' as const, comparison }]
     expect(() => render(<RouteResultsPanel groups={groups} selected={routeViews('BIKE_TRANSIT', ['BICYCLE', 'TRAIN'], request, comparison)[0]} canStartNavigation={false} {...handlers} />)).not.toThrow()
-    const strip = screen.getByLabelText('Cycle 10 minutes, Wait 5 minutes, Bus B07, Walk 2 minutes, Train R03A, Walk 4 minutes')
-    expect(Array.from(strip.querySelectorAll('[data-itinerary-token]')).map((token) => token.textContent)).toEqual(['Cycle 10m', 'Wait 5m', 'Bus B07', 'Walk 2m', 'Train R03A', 'Walk 4m'])
+    const strip = screen.getByLabelText('Sepeda 10 menit, Tunggu 5 menit, Bus B07, Jalan 2 menit, Kereta R03A, Jalan 4 menit')
+    expect(Array.from(strip.querySelectorAll('[data-itinerary-token]')).map((token) => token.textContent)).toEqual(['Sepeda 10m', 'Tunggu 5m', 'Bus B07', 'Jalan 2m', 'Kereta R03A', 'Jalan 4m'])
     expect(screen.queryByRole('heading', { name: 'Transit itinerary' })).not.toBeInTheDocument()
     expect(screen.queryByRole('list', { name: 'Transit itinerary' })).not.toBeInTheDocument()
     expect(screen.queryByText(/walking access and transfers included/i)).not.toBeInTheDocument()
@@ -163,9 +162,9 @@ describe('RouteResultsPanel single itinerary', () => {
   })
 
   it.each([
-    ['NONE', 'No break threshold · 36.0°C / UV 9'],
-    ['CONSIDER', 'Consider a break · 36.0°C / UV 9'],
-    ['RECOMMENDED', 'Break recommended · 36.0°C / UV 9'],
+    ['NONE', 'Belum perlu istirahat · 36.0°C / UV 9'],
+    ['CONSIDER', 'Pertimbangkan istirahat · 36.0°C / UV 9'],
+    ['RECOMMENDED', 'Istirahat disarankan · 36.0°C / UV 9'],
   ] as const)('renders %s break guidance for every selected route', (breakRecommendation, text) => {
     const route = { ...routeOption(), heatUv: { ...routeOption().heatUv, breakRecommendation, reasons: ['Shade is limited.', 'UV is elevated.'] } }
     const comparison = routeComparison('break', [route])
@@ -184,7 +183,7 @@ describe('RouteResultsPanel single itinerary', () => {
     const request = plannerRequest('WALK')
     const groups = [{ task: { id: 'WALK' as const, label: 'Walk', selectedModes: ['WALK'] as const, request }, status: 'success' as const, comparison }]
     render(<RouteResultsPanel groups={groups} selected={routeViews('WALK', ['WALK'], request, comparison)[0]} canStartNavigation={false} guidanceMessage="Live location is unavailable." {...handlers} />)
-    expect(screen.getByText('Weather unavailable')).toBeInTheDocument()
+    expect(screen.getByText('Cuaca tidak tersedia')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Show rest stops on map' })).not.toBeInTheDocument()
   })
 
@@ -196,25 +195,27 @@ describe('RouteResultsPanel single itinerary', () => {
     expect(screen.queryByRole('button', { name: 'Show rest stops on map' })).not.toBeInTheDocument()
   })
 
-  it('renders guidance CTA and status only when navigation is supplied', () => {
+  it('keeps the navigation CTA in a fixed footer and explains disabled state', () => {
     const comparison = routeComparison('transit')
     const request = plannerRequest('TRAIN')
     const groups = [{ task: { id: 'TRANSIT' as const, label: 'Train', selectedModes: ['TRAIN'] as const, request }, status: 'success' as const, comparison }]
     const view = routeViews('TRANSIT', ['TRAIN'], request, comparison)[0]
-    const rendered = render(<RouteResultsPanel groups={groups} selected={view} canStartNavigation={false} guidanceMessage="Move within 150 m of the route start." {...handlersWithoutNavigation} />)
-    expect(screen.queryByRole('button', { name: 'Start route guidance' })).not.toBeInTheDocument()
-    expect(screen.queryByText('Move within 150 m of the route start.')).not.toBeInTheDocument()
+    const rendered = render(<RouteResultsPanel groups={groups} selected={view} canStartNavigation={false} guidanceMessage="Bergeraklah hingga berjarak maksimal 150 m dari titik awal rute." {...handlers} />)
+    const disabled = screen.getByRole('button', { name: 'Mulai navigasi' })
+    expect(disabled).toBeDisabled()
+    expect(disabled.parentElement).toHaveClass('shrink-0')
+    expect(screen.getByText('Bergeraklah hingga berjarak maksimal 150 m dari titik awal rute.')).toBeInTheDocument()
 
-    rendered.rerender(<RouteResultsPanel groups={groups} selected={view} canStartNavigation guidanceMessage="Live location is ready at the route start." {...handlers} />)
-    expect(screen.getByRole('button', { name: 'Start route guidance' })).toBeEnabled()
-    expect(screen.getByText('Live location is ready at the route start.')).toBeInTheDocument()
+    rendered.rerender(<RouteResultsPanel groups={groups} selected={view} canStartNavigation guidanceMessage="Lokasi saat ini siap di titik awal rute." {...handlers} />)
+    expect(screen.getByRole('button', { name: 'Mulai navigasi' })).toBeEnabled()
+    expect(screen.getByText('Lokasi saat ini siap di titik awal rute.')).toBeInTheDocument()
   })
 
   it('keeps the empty panel useful and the desktop drag target wide', () => {
     render(<RouteResultsPanel groups={[]} canStartNavigation={false} {...handlers} />)
-    expect(screen.getByText('No routes yet')).toBeInTheDocument()
-    const drag = screen.getByRole('button', { name: 'Drag route options panel' })
+    expect(screen.getByText('Belum ada rute')).toBeInTheDocument()
+    const drag = screen.getByRole('button', { name: 'Geser panel pilihan rute' })
     expect(drag).toHaveClass('flex-1')
-    expect(drag).toHaveTextContent('Route options')
+    expect(drag).toHaveTextContent('Pilihan rute')
   })
 })

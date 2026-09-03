@@ -36,10 +36,10 @@ describe('RouteResultsPanel route intelligence', () => {
     const groups = [{ task: { id: 'TRANSIT' as const, label: 'Walk + Bus', selectedModes: ['WALK', 'BUS'] as const, request }, status: 'success' as const, comparison }]
     render(<RouteResultsPanel groups={groups} selected={routes[0]} canStartNavigation {...handlers} />)
     expect(screen.getByText('+30 min')).toBeInTheDocument()
-    expect(screen.getByText('+30/+60 use hourly forecast estimates.')).toBeInTheDocument()
-    expect(screen.getByLabelText('Walk 3 minutes, Bus 7, Walk 4 minutes')).toBeInTheDocument()
+    expect(screen.getByText('+30/+60 menggunakan estimasi prakiraan per jam.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Jalan 3 menit, Bus 7, Jalan 4 menit')).toBeInTheDocument()
     expect(screen.queryByRole('list', { name: 'Transit itinerary' })).not.toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Accessibility approximation' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Perkiraan aksesibilitas' })).toBeInTheDocument()
     expect(screen.getByText('This does not verify wheelchair or step-free access.')).toBeInTheDocument()
     expect(screen.queryByText('Sources and timestamps')).not.toBeInTheDocument()
     expect(screen.queryByText('Rest-stop candidates')).not.toBeInTheDocument()

@@ -1,15 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createSavedCommute, deleteSavedCommute, getSavedCommutes, getTripImpactSummary, recordTripImpact, updateSavedCommute } from '@/api'
+import { createSavedCommute, deleteSavedCommute, getSavedCommutes, recordTripImpact, updateSavedCommute } from '@/api'
 import type { SavedCommuteInput } from '@/types'
 
-export const insightsKeys = { commutes: ['insights', 'saved-commutes'] as const, summary: ['insights', 'trip-impact-summary'] as const }
+export const insightsKeys = { commutes: ['insights', 'saved-commutes'] as const }
 
 export function useSavedCommutes() {
   return useQuery({ queryKey: insightsKeys.commutes, queryFn: ({ signal }) => getSavedCommutes(signal) })
-}
-
-export function useTripImpactSummary() {
-  return useQuery({ queryKey: insightsKeys.summary, queryFn: ({ signal }) => getTripImpactSummary(signal) })
 }
 
 function useCommuteInvalidation<TVariables>(mutationFn: (variables: TVariables) => Promise<unknown>) {
@@ -30,6 +26,5 @@ export function useDeleteSavedCommute() {
 }
 
 export function useRecordTripImpact() {
-  const queryClient = useQueryClient()
-  return useMutation({ mutationFn: recordTripImpact, onSuccess: () => queryClient.invalidateQueries({ queryKey: insightsKeys.summary }), retry: false })
+  return useMutation({ mutationFn: recordTripImpact, retry: false })
 }

@@ -6,18 +6,18 @@ const REPORT_ROUTE_DISTANCE_METERS = 100
 
 export type OriginSource = 'CURRENT_LOCATION' | 'OTHER'
 export type RouteGuidanceEligibility =
-  | { eligible: true; code: 'ELIGIBLE'; message: 'Live location is ready at the route start.' }
+  | { eligible: true; code: 'ELIGIBLE'; message: 'Lokasi saat ini siap di titik awal rute.' }
   | { eligible: false; code: 'ORIGIN_NOT_CURRENT_LOCATION' | 'NO_FIX' | 'STALE_FIX' | 'INACCURATE_FIX' | 'TOO_FAR'; message: string }
 
 type GuidanceFix = { latitude: number; longitude: number; accuracy: number; timestamp: number }
 
 export function routeGuidanceEligibility(origin: { latitude: number; longitude: number }, source: OriginSource, fix: GuidanceFix | null, now = Date.now()): RouteGuidanceEligibility {
-  if (source === 'OTHER') return { eligible: false, code: 'ORIGIN_NOT_CURRENT_LOCATION', message: 'Use current location as the route origin to start guidance.' }
-  if (!fix) return { eligible: false, code: 'NO_FIX', message: 'Live location is unavailable. Use current location or allow precise location.' }
-  if (!Number.isFinite(fix.accuracy) || fix.accuracy < 0 || fix.accuracy > 100) return { eligible: false, code: 'INACCURATE_FIX', message: 'Live location accuracy must be within 100 m.' }
-  if (!Number.isFinite(fix.timestamp) || now - fix.timestamp > 15_000) return { eligible: false, code: 'STALE_FIX', message: 'Live location is stale. Wait for a fresh location fix.' }
-  if (distanceMeters(origin, fix) > 150) return { eligible: false, code: 'TOO_FAR', message: 'Move within 150 m of the route start.' }
-  return { eligible: true, code: 'ELIGIBLE', message: 'Live location is ready at the route start.' }
+  if (source === 'OTHER') return { eligible: false, code: 'ORIGIN_NOT_CURRENT_LOCATION', message: 'Gunakan lokasi saat ini sebagai titik awal untuk memulai navigasi.' }
+  if (!fix) return { eligible: false, code: 'NO_FIX', message: 'Lokasi langsung tidak tersedia. Gunakan lokasi saat ini atau izinkan lokasi presisi.' }
+  if (!Number.isFinite(fix.accuracy) || fix.accuracy < 0 || fix.accuracy > 100) return { eligible: false, code: 'INACCURATE_FIX', message: 'Akurasi lokasi harus berada dalam radius 100 m.' }
+  if (!Number.isFinite(fix.timestamp) || now - fix.timestamp > 15_000) return { eligible: false, code: 'STALE_FIX', message: 'Lokasi sudah kedaluwarsa. Tunggu pembaruan lokasi.' }
+  if (distanceMeters(origin, fix) > 150) return { eligible: false, code: 'TOO_FAR', message: 'Bergeraklah hingga berjarak maksimal 150 m dari titik awal rute.' }
+  return { eligible: true, code: 'ELIGIBLE', message: 'Lokasi saat ini siap di titik awal rute.' }
 }
 
 export function canStartNavigationFrom(origin: { latitude: number; longitude: number }, source: OriginSource, fix: GuidanceFix | null, now = Date.now()) {

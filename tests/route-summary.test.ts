@@ -30,7 +30,7 @@ describe('saveRouteSummary', () => {
       version: 2,
       savedAt: '2026-09-01T12:00:00.000Z',
       expiresAt: '2026-09-02T12:00:00.000Z',
-      modeLabel: 'Walk + Bus',
+      modeLabel: 'Jalan + Bus',
       preference: 'lower-exposure',
       route: {
         labels: ['RECOMMENDED'],
@@ -49,7 +49,7 @@ describe('saveRouteSummary', () => {
   it.each(['BUS', 'TRAIN', 'SUBWAY'] as const)('stores %s safely and specifically without coordinates', (mode) => {
     saveRouteSummary({ selectedModes: [mode], preference: 'balanced', route })
     const saved = localStorage.getItem(ROUTE_SUMMARY_KEY)!
-    expect(JSON.parse(saved).modeLabel).toBe(mode === 'BUS' ? 'Bus' : mode === 'TRAIN' ? 'Train' : 'Subway')
+    expect(JSON.parse(saved).modeLabel).toBe(mode === 'BUS' ? 'Bus' : mode === 'TRAIN' ? 'Kereta' : 'MRT')
     expect(saved).not.toContain('latitude')
     expect(saved).not.toContain('longitude')
   })
@@ -61,7 +61,7 @@ describe('saveRouteSummary', () => {
     const saved = JSON.parse(localStorage.getItem(ROUTE_SUMMARY_KEY)!)
     expect(saved.origin).toBeUndefined()
     expect(saved.destination).toBeUndefined()
-    expect(saved.modeLabel).toBe('Cycle')
+    expect(saved.modeLabel).toBe('Sepeda')
     expect(saved.route.durationSeconds).toBe(600)
     expect(localStorage).toHaveLength(1)
   })
