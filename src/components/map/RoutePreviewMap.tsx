@@ -110,9 +110,9 @@ function checkpointIcon(kind: 'origin' | 'destination') {
 }
 
 function liveLocationIcon(heading: number) {
-  const safeHeading = Number.isFinite(heading) ? heading : 0
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72"><defs><filter id="s" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#142922" flood-opacity=".28"/></filter></defs><circle cx="36" cy="36" r="25" fill="#087f5b" opacity=".16"/><g filter="url(#s)" transform="rotate(${safeHeading} 36 36)"><path d="M36 8L55 55L36 47L17 55Z" fill="#0aa979" stroke="white" stroke-width="5" stroke-linejoin="round"/><path d="M36 17V43" stroke="#86f0c7" stroke-width="3" stroke-linecap="round"/></g></svg>`
-  return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, size: new google.maps.Size(72, 72), scaledSize: new google.maps.Size(72, 72), anchor: new google.maps.Point(36, 36) }
+  const safeHeading = Math.round((Number.isFinite(heading) ? heading : 0) / 15) * 15 % 360
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52"><defs><filter id="s" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#142922" flood-opacity=".28"/></filter></defs><g filter="url(#s)" transform="rotate(${safeHeading} 26 26)"><path d="M26 4L42 44L26 37L10 44Z" fill="#0aa979" stroke="white" stroke-width="4" stroke-linejoin="round"/><path d="M26 12V34" stroke="#86f0c7" stroke-width="3" stroke-linecap="round"/></g></svg>`
+  return { heading: safeHeading, url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, size: new google.maps.Size(52, 52), scaledSize: new google.maps.Size(52, 52), anchor: new google.maps.Point(26, 26) }
 }
 
 function reportIcon(category: RoadReport['category']) {
@@ -452,7 +452,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
   const nodeRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<google.maps.Map | null>(null)
   const locationMarkerRef = useRef<google.maps.Marker | null>(null)
-  const accuracyCircleRef = useRef<google.maps.Circle | null>(null)
+  const locationHeadingRef = useRef<number | null>(null)
   const checkpointOverlays = useRef<Array<google.maps.Marker | google.maps.Polyline>>([])
   const reportMarkers = useRef<google.maps.Marker[]>([])
   const reportInfoWindowRef = useRef<google.maps.InfoWindow | null>(null)
@@ -650,7 +650,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     checkpointOverlays.current.forEach((overlay) => overlay.setMap(null))
     checkpointOverlays.current = []
     const bounds = new google.maps.LatLngBounds()
-    if (origin) {
+    if (origin && !followLiveLocation) {
       const marker = new google.maps.Marker({ map, position: { lat: origin.latitude, lng: origin.longitude }, title: `Asal: ${origin.label}`, icon: checkpointIcon('origin'), draggable: !followLiveLocation && Boolean(callbacks.current.onOriginChange), optimized: false })
       marker.addListener('dragend', () => { const position = marker.getPosition(); if (position && callbacks.current.onOriginChange) { callbacks.current.onOriginChange({ ...origin, id: `map-origin-${position.lat()}-${position.lng()}`, label: 'Adjusted origin', detail: 'Checkpoint moved on map', latitude: position.lat(), longitude: position.lng() }) } })
       checkpointOverlays.current.push(marker); bounds.extend(marker.getPosition()!)
@@ -684,10 +684,9 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     const heading = snapped && !snapped.isOffRoute ? snapped.heading : liveLocation.heading
     displayedLocationRef.current = position
     if (snapped) callbacks.current.onNavigationProgress?.({ remainingMeters: snapped.remainingMeters, heading, isOffRoute: snapped.isOffRoute })
-    if (!locationMarkerRef.current) locationMarkerRef.current = new google.maps.Marker({ map, position, icon: liveLocationIcon(heading), title: 'Lokasi Anda saat ini', zIndex: 10, optimized: false })
-    else { locationMarkerRef.current.setPosition(position); locationMarkerRef.current.setIcon(liveLocationIcon(heading)) }
-    if (!accuracyCircleRef.current) accuracyCircleRef.current = new google.maps.Circle({ map, center: rawPosition, radius: liveLocation.accuracy, strokeColor: '#087f5b', strokeOpacity: .35, strokeWeight: 1, fillColor: '#087f5b', fillOpacity: .08, clickable: false })
-    else { accuracyCircleRef.current.setCenter(rawPosition); accuracyCircleRef.current.setRadius(liveLocation.accuracy) }
+    const icon = liveLocationIcon(heading)
+    if (!locationMarkerRef.current) { locationHeadingRef.current = icon.heading; locationMarkerRef.current = new google.maps.Marker({ map, position, icon, title: 'Lokasi Anda saat ini', zIndex: 10, optimized: false }) }
+    else { locationMarkerRef.current.setPosition(position); if (locationHeadingRef.current !== icon.heading) { locationHeadingRef.current = icon.heading; locationMarkerRef.current.setIcon(icon) } }
     if (initialLocationCameraMapRef.current !== map) {
       initialLocationCameraMapRef.current = map
       if (!origin && !destination && routes.length === 0 && !followLiveLocation) map.setCenter(rawPosition)
@@ -828,9 +827,9 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     })
   }, [checkStreetView, closePlacePopup, dismissPopupPeers, mapVersion, restStopCandidates, showAccessiblePlaces, showRestStops])
 
-  useEffect(() => () => { closeStreetView(); transitStopRequestRef.current += 1; transitStopControllerRef.current?.abort(); weatherMarkersRef.current.forEach((marker) => marker.setMap(null)); placeMarkersRef.current.forEach((marker) => marker.setMap(null)); transitStopMarkersRef.current.forEach((marker) => marker.setMap(null)); transitStopInfoWindowRef.current?.close(); placeInfoWindowRef.current?.close(); reportInfoWindowRef.current?.close(); checkpointOverlays.current.forEach((overlay) => overlay.setMap(null)); reportMarkers.current.forEach((marker) => marker.setMap(null)); locationMarkerRef.current?.setMap(null); accuracyCircleRef.current?.setMap(null) }, [closeStreetView])
+  useEffect(() => () => { closeStreetView(); transitStopRequestRef.current += 1; transitStopControllerRef.current?.abort(); weatherMarkersRef.current.forEach((marker) => marker.setMap(null)); placeMarkersRef.current.forEach((marker) => marker.setMap(null)); transitStopMarkersRef.current.forEach((marker) => marker.setMap(null)); transitStopInfoWindowRef.current?.close(); placeInfoWindowRef.current?.close(); reportInfoWindowRef.current?.close(); checkpointOverlays.current.forEach((overlay) => overlay.setMap(null)); reportMarkers.current.forEach((marker) => marker.setMap(null)); locationMarkerRef.current?.setMap(null) }, [closeStreetView])
 
-  return <div className="relative h-full min-h-[28rem] overflow-hidden bg-white"><div className="absolute inset-0" ref={nodeRef} aria-label={origin && destination ? `Peta dari ${origin.label} ke ${destination.label}` : 'Peta rute Jakarta'} />{reportPopupHost && selectedReport && reportPopup && <ReportPopupPortal host={reportPopupHost} report={selectedReport} render={reportPopup} onClose={closeReportPopup} />}{streetViewVisible && <button ref={streetViewCloseRef} type="button" onClick={closeStreetView} className="absolute top-[calc(max(.75rem,env(safe-area-inset-top))+4.5rem)] left-3 z-50 inline-flex min-h-11 items-center gap-2 rounded-xl border border-ae-line bg-white px-4 text-sm font-black text-ae-ink shadow-lg lg:left-5"><ArrowLeft className="size-4" aria-hidden="true" />Kembali ke peta</button>}{followLiveLocation && !cameraFollowing && !streetViewVisible && <button type="button" onClick={() => { const position = displayedLocationRef.current; if (!position || !mapRef.current) return; cameraFollowingRef.current = true; setCameraPausedSession(null); mapRef.current.panTo(position); if ((mapRef.current.getZoom() ?? 0) < 17) mapRef.current.setZoom(17) }} className="absolute right-3 bottom-24 z-20 inline-flex min-h-11 items-center gap-2 rounded-xl border border-ae-line bg-white px-4 text-sm font-black text-ae-brand shadow-lg lg:right-5 lg:bottom-5"><LocateFixed className="size-4" aria-hidden="true" />Fokus ke lokasi</button>}{status === 'loading' && <div className="absolute inset-0 grid place-items-center bg-white"><span className="inline-flex items-center gap-2 text-sm font-extrabold text-ae-brand"><LoaderCircle className="size-5 animate-spin" />Memuat...</span></div>}{(status === 'unavailable' || status === 'error') && <div className="absolute inset-0 grid place-items-center bg-white p-6"><div className="text-center">{status === 'error' ? <TriangleAlert className="mx-auto size-8 text-ae-fastest" /> : <MapPinned className="mx-auto size-8 text-ae-brand" />}<strong className="mt-3 block text-base font-black">Map unavailable</strong></div></div>}</div>
+  return <div className="relative h-full min-h-[28rem] overflow-hidden bg-white"><div className="absolute inset-0" ref={nodeRef} aria-label={origin && destination ? `Peta dari ${origin.label} ke ${destination.label}` : 'Peta rute Jakarta'} />{reportPopupHost && selectedReport && reportPopup && <ReportPopupPortal host={reportPopupHost} report={selectedReport} render={reportPopup} onClose={closeReportPopup} />}{streetViewVisible && <button ref={streetViewCloseRef} type="button" onClick={closeStreetView} className="absolute top-[calc(max(.75rem,env(safe-area-inset-top))+5rem)] left-3 z-[90] inline-flex min-h-11 items-center gap-2 rounded-xl border border-ae-line bg-white px-4 text-sm font-black text-ae-ink shadow-lg lg:left-5"><ArrowLeft className="size-4" aria-hidden="true" />Kembali ke peta</button>}{followLiveLocation && !cameraFollowing && !streetViewVisible && <button type="button" onClick={() => { const position = displayedLocationRef.current; if (!position || !mapRef.current) return; cameraFollowingRef.current = true; setCameraPausedSession(null); mapRef.current.panTo(position); if ((mapRef.current.getZoom() ?? 0) < 17) mapRef.current.setZoom(17) }} className="absolute right-3 bottom-24 z-20 inline-flex min-h-11 items-center gap-2 rounded-xl border border-ae-line bg-white px-4 text-sm font-black text-ae-brand shadow-lg lg:right-5 lg:bottom-5"><LocateFixed className="size-4" aria-hidden="true" />Fokus ke lokasi</button>}{status === 'loading' && <div className="absolute inset-0 grid place-items-center bg-white"><span className="inline-flex items-center gap-2 text-sm font-extrabold text-ae-brand"><LoaderCircle className="size-5 animate-spin" />Memuat...</span></div>}{(status === 'unavailable' || status === 'error') && <div className="absolute inset-0 grid place-items-center bg-white p-6"><div className="text-center">{status === 'error' ? <TriangleAlert className="mx-auto size-8 text-ae-fastest" /> : <MapPinned className="mx-auto size-8 text-ae-brand" />}<strong className="mt-3 block text-base font-black">Map unavailable</strong></div></div>}</div>
 }
 
 export const RoutePreviewMap = memo(RoutePreviewMapComponent)

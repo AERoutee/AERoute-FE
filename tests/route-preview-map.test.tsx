@@ -21,6 +21,7 @@ const setCenter = jest.fn()
 const panTo = jest.fn()
 const fitBounds = jest.fn()
 const markerSetPosition = jest.fn()
+const markerSetIcon = jest.fn()
 const infoWindowSetContent = jest.fn()
 const infoWindowOpen = jest.fn()
 const infoWindowClose = jest.fn()
@@ -90,7 +91,7 @@ beforeEach(() => {
   Object.defineProperty(globalThis, 'google', {
     configurable: true,
     value: { maps: {
-      Marker: jest.fn(() => { const listeners: Record<string, () => void> = {}; markerListeners.push(listeners); return { addListener: jest.fn((event: string, callback: () => void) => { listeners[event] = callback }), getPosition: jest.fn(() => ({ lat: () => -6.2, lng: () => 106.8 })), setMap: jest.fn(), setPosition: markerSetPosition, setIcon: jest.fn(), setTitle: jest.fn() } }),
+      Marker: jest.fn(() => { const listeners: Record<string, () => void> = {}; markerListeners.push(listeners); return { addListener: jest.fn((event: string, callback: () => void) => { listeners[event] = callback }), getPosition: jest.fn(() => ({ lat: () => -6.2, lng: () => 106.8 })), setMap: jest.fn(), setPosition: markerSetPosition, setIcon: markerSetIcon, setTitle: jest.fn() } }),
       Circle: constructor({ setMap: jest.fn(), setCenter: jest.fn(), setRadius: jest.fn() }),
       Polyline: constructor({ addListener: jest.fn(), setMap: jest.fn(), setOptions: jest.fn() }),
       InfoWindow: jest.fn(() => { const listeners: Record<string, () => void> = {}; const close = jest.fn(() => infoWindowClose()); const instance = { addListener: jest.fn((event: string, callback: () => void) => { listeners[event] = callback; infoWindowListeners[event] = callback }), close, setContent: infoWindowSetContent, open: infoWindowOpen }; infoWindows.push({ close, listeners }); return instance }),
@@ -150,6 +151,7 @@ describe('RoutePreviewMap initial camera', () => {
     view.rerender(<RoutePreviewMap origin={null} destination={null} liveLocation={secondLocation} />)
     await waitFor(() => expect(markerSetPosition).toHaveBeenCalledWith({ lat: -6.41, lng: 106.9 }))
     expect(setCenter).toHaveBeenCalledTimes(1)
+    expect(google.maps.Circle).not.toHaveBeenCalled()
     expect(panTo).not.toHaveBeenCalled()
   })
 
@@ -167,6 +169,21 @@ describe('RoutePreviewMap initial camera', () => {
     await finishMapLoad()
     await waitFor(() => expect(fitBounds).toHaveBeenCalledTimes(1))
     expect(setCenter).not.toHaveBeenCalled()
+  })
+
+  it('hides the origin marker and keeps small heading changes stable while navigating', async () => {
+    const origin = { id: 'origin', label: 'Origin', detail: '', latitude: -6.4, longitude: 106.9 }
+    const route = { ...routeOption(), encodedPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@' }
+    const view = render(<RoutePreviewMap origin={origin} destination={null} routes={[route]} liveLocation={{ ...firstLocation, heading: 2 }} followLiveLocation navigationRoute={route} />)
+    await finishMapLoad()
+    const Marker = google.maps.Marker as unknown as jest.Mock
+    await waitFor(() => expect(Marker.mock.calls.some(([options]) => options.title === 'Lokasi Anda saat ini')).toBe(true))
+    expect(Marker.mock.calls.some(([options]) => options.title === 'Asal: Origin')).toBe(false)
+    const locationIcon = Marker.mock.calls.find(([options]) => options.title === 'Lokasi Anda saat ini')[0].icon
+    expect(decodeURIComponent(locationIcon.url)).not.toContain('opacity=".16"')
+    view.rerender(<RoutePreviewMap origin={origin} destination={null} routes={[route]} liveLocation={{ ...firstLocation, heading: 7 }} followLiveLocation navigationRoute={route} />)
+    await waitFor(() => expect(markerSetPosition).toHaveBeenCalled())
+    expect(markerSetIcon).not.toHaveBeenCalled()
   })
 
   it('pauses camera follow after dragging and resumes from the location control', async () => {
@@ -412,7 +429,7 @@ describe('RoutePreviewMap initial camera', () => {
     expect(panoramaSetVisible).toHaveBeenCalledWith(true)
     expect(google.maps.event.trigger).toHaveBeenCalledWith(panorama, 'resize')
     const close = await screen.findByRole('button', { name: 'Kembali ke peta' })
-    expect(close).toHaveClass('min-h-11', 'z-50')
+    expect(close).toHaveClass('min-h-11', 'z-[90]')
     resizeObserverCallback?.([{ contentRect: { width: 800, height: 600 } } as ResizeObserverEntry], {} as ResizeObserver)
     expect(google.maps.event.trigger).toHaveBeenCalledWith(panorama, 'resize')
     await userEvent.keyboard('{Escape}')
