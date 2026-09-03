@@ -20,6 +20,7 @@ const getStopDetails = getTransitStopDetails as jest.Mock
 const setCenter = jest.fn()
 const panTo = jest.fn()
 const fitBounds = jest.fn()
+const moveCamera = jest.fn()
 const markerSetPosition = jest.fn()
 const markerSetIcon = jest.fn()
 const infoWindowSetContent = jest.fn()
@@ -60,6 +61,7 @@ const map = {
   setZoom: jest.fn(),
   setCenter,
   panTo,
+  moveCamera,
   fitBounds,
 }
 const MapMock = jest.fn(() => map)
@@ -91,7 +93,7 @@ beforeEach(() => {
   Object.defineProperty(globalThis, 'google', {
     configurable: true,
     value: { maps: {
-      Marker: jest.fn(() => { const listeners: Record<string, () => void> = {}; markerListeners.push(listeners); return { addListener: jest.fn((event: string, callback: () => void) => { listeners[event] = callback }), getPosition: jest.fn(() => ({ lat: () => -6.2, lng: () => 106.8 })), setMap: jest.fn(), setPosition: markerSetPosition, setIcon: markerSetIcon, setTitle: jest.fn() } }),
+      Marker: jest.fn(() => { const listeners: Record<string, () => void> = {}; markerListeners.push(listeners); return { addListener: jest.fn((event: string, callback: () => void) => { listeners[event] = callback }), getPosition: jest.fn(() => ({ lat: () => -6.2, lng: () => 106.8 })), setDraggable: jest.fn(), setMap: jest.fn(), setPosition: markerSetPosition, setIcon: markerSetIcon, setTitle: jest.fn() } }),
       Circle: constructor({ setMap: jest.fn(), setCenter: jest.fn(), setRadius: jest.fn() }),
       Polyline: constructor({ addListener: jest.fn(), setMap: jest.fn(), setOptions: jest.fn() }),
       InfoWindow: jest.fn(() => { const listeners: Record<string, () => void> = {}; const close = jest.fn(() => infoWindowClose()); const instance = { addListener: jest.fn((event: string, callback: () => void) => { listeners[event] = callback; infoWindowListeners[event] = callback }), close, setContent: infoWindowSetContent, open: infoWindowOpen }; infoWindows.push({ close, listeners }); return instance }),
@@ -186,16 +188,75 @@ describe('RoutePreviewMap initial camera', () => {
     expect(markerSetIcon).not.toHaveBeenCalled()
   })
 
+  it('keeps the destination marker stable when navigation starts', async () => {
+    const destination = { id: 'destination', label: 'Destination', detail: '', latitude: 38.6, longitude: -120.3 }
+    const route = { ...routeOption(), encodedPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@' }
+    const view = render(<RoutePreviewMap origin={null} destination={destination} routes={[route]} liveLocation={firstLocation} />)
+    await finishMapLoad()
+    const Marker = google.maps.Marker as unknown as jest.Mock
+    await waitFor(() => expect(Marker.mock.calls.filter(([options]) => options.title === 'Tujuan: Destination')).toHaveLength(1))
+
+    view.rerender(<RoutePreviewMap origin={null} destination={destination} routes={[route]} liveLocation={firstLocation} followLiveLocation navigationRoute={route} />)
+
+    await waitFor(() => expect(moveCamera).toHaveBeenCalled())
+    expect(Marker.mock.calls.filter(([options]) => options.title === 'Tujuan: Destination')).toHaveLength(1)
+  })
+
+  it('moves the live marker continuously instead of locking it to route vertices', async () => {
+    const route = { ...routeOption(), encodedPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@' }
+    const first = { ...firstLocation, latitude: 38.5001, longitude: -120.2001 }
+    const second = { ...first, latitude: 38.5002, longitude: -120.2002 }
+    const view = render(<RoutePreviewMap origin={null} destination={null} routes={[route]} liveLocation={first} followLiveLocation navigationRoute={route} />)
+    await finishMapLoad()
+
+    view.rerender(<RoutePreviewMap origin={null} destination={null} routes={[route]} liveLocation={second} followLiveLocation navigationRoute={route} />)
+
+    await waitFor(() => expect(markerSetPosition).toHaveBeenCalledWith({ lat: second.latitude, lng: second.longitude }))
+  })
+
+  it('reports the active turn instruction with navigation progress', async () => {
+    const onNavigationProgress = jest.fn()
+    const route = { ...routeOption(), encodedPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@', navigationSteps: [{ instruction: 'Belok kiri ke Jalan Utama', maneuver: 'TURN_LEFT', travelMode: 'WALK', distanceMeters: 100, startLocation: { latitude: 38.5, longitude: -120.2 }, endLocation: { latitude: 40.7, longitude: -120.95 }, encodedPolyline: '_p~iF~ps|U_ulLnnqC' }] }
+    render(<RoutePreviewMap origin={null} destination={null} routes={[route]} liveLocation={{ ...firstLocation, latitude: 38.5, longitude: -120.2 }} followLiveLocation navigationRoute={route} onNavigationProgress={onNavigationProgress} />)
+    await finishMapLoad()
+
+    await waitFor(() => expect(onNavigationProgress).toHaveBeenCalledWith(expect.objectContaining({ instruction: 'Belok kiri ke Jalan Utama', maneuver: 'TURN_LEFT', travelMode: 'WALK', distanceToManeuverMeters: expect.any(Number) })))
+  })
+
+  it('starts navigation with one camera move and one consistent route color', async () => {
+    const route = { ...routeOption(), encodedPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@', dataQuality: 'partial_estimate' as const, airQualitySampleCount: 2, airQualityExpectedSampleCount: 3, airQualitySamples: [{ latitude: 38.5, longitude: -120.2, pm25: 10 }, { latitude: 43.252, longitude: -126.453, pm25: 40 }] }
+    const routes = [route]
+    const view = render(<RoutePreviewMap origin={null} destination={null} routes={routes} liveLocation={firstLocation} />)
+    await finishMapLoad()
+    const Polyline = google.maps.Polyline as unknown as jest.Mock
+    const initialPolylineCount = Polyline.mock.calls.length
+    view.rerender(<RoutePreviewMap origin={null} destination={null} routes={routes} liveLocation={firstLocation} followLiveLocation navigationRoute={route} />)
+    await waitFor(() => expect(moveCamera).toHaveBeenCalledWith({ center: expect.any(Object), zoom: 17 }))
+    const navigationLines = Polyline.mock.calls.slice(initialPolylineCount).map(([options]) => options).filter((options) => options.strokeOpacity !== 0)
+    expect(navigationLines).toEqual([expect.objectContaining({ strokeColor: '#087f5b', strokeOpacity: 1, strokeWeight: 8 })])
+    expect(panTo).not.toHaveBeenCalled()
+    expect(map.setZoom).not.toHaveBeenCalled()
+  })
+
   it('pauses camera follow after dragging and resumes from the location control', async () => {
     const route = { ...routeOption(), encodedPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@' }
     render(<RoutePreviewMap origin={null} destination={null} routes={[route]} liveLocation={firstLocation} followLiveLocation navigationRoute={route} />)
     await finishMapLoad()
-    await waitFor(() => expect(panTo).toHaveBeenCalled())
+    await waitFor(() => expect(moveCamera).toHaveBeenCalled())
     act(() => mapListeners.dragstart?.())
     const focus = screen.getByRole('button', { name: 'Fokus ke lokasi' })
     await userEvent.click(focus)
-    expect(panTo).toHaveBeenCalledTimes(2)
+    expect(panTo).toHaveBeenCalledTimes(1)
     expect(screen.queryByRole('button', { name: 'Fokus ke lokasi' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the route identifiable when PM2.5 segment coverage is unavailable', async () => {
+    const route = { ...routeOption(), labels: ['LOWEST_EXPOSURE'] as const, encodedPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@', dataQuality: 'partial_estimate' as const, airQualitySampleCount: 1, airQualityExpectedSampleCount: 5, airQualitySamples: [{ latitude: 38.5, longitude: -120.2, pm25: 10 }] }
+    render(<RoutePreviewMap origin={null} destination={null} routes={[route]} selectedId={route.id} />)
+    await finishMapLoad()
+    const Polyline = google.maps.Polyline as unknown as jest.Mock
+    expect(Polyline.mock.calls.some(([options]) => options.strokeColor === '#2457a7')).toBe(true)
+    expect(Polyline.mock.calls.some(([options]) => options.strokeColor === '#7b8983')).toBe(false)
   })
 
   it('keeps PM2.5 colors on route segments without rendering a floating legend', async () => {

@@ -14,12 +14,13 @@ const clearWatch = jest.fn()
 const mockCompareRoutes = jest.fn()
 const mockGetNearbyRoadReports = jest.fn()
 const mapTransitStops: unknown[][] = []
+const mapRestStops: unknown[][] = []
 let watchSuccess: PositionCallback
 let watchError: PositionErrorCallback
 
 jest.mock('react-router', () => ({ useLocation: () => ({ state: null }) }))
 jest.mock('@/api', () => ({ compareRoutes: (...args: unknown[]) => mockCompareRoutes(...args), getNearbyRoadReports: (...args: unknown[]) => mockGetNearbyRoadReports(...args) }))
-jest.mock('@/components', () => ({ RoutePreviewMap: ({ routes = [], transitStops = [], liveLocation, onMapReady, onOriginChange, onBoundsChange }: { routes?: Array<{ id: string }>; transitStops?: unknown[]; liveLocation?: { timestamp?: number } | null; onMapReady?: (ready: boolean) => void; onOriginChange?: (place: object) => void; onBoundsChange?: (bounds: object) => void }) => { mapTransitStops.push(transitStops); return <><button type="button" onClick={() => onMapReady?.(true)}>Enable map</button><button type="button" onClick={() => onOriginChange?.({ id: 'dragged', label: 'Adjusted origin', detail: '', latitude: 1, longitude: 2 })}>Drag origin</button><button type="button" onClick={() => onBoundsChange?.({ north: 39, east: -119, south: 38, west: -121 })}>Load hazards</button><button type="button" onClick={() => onBoundsChange?.({ north: 39.1, east: -119, south: 38, west: -121 })}>Clear hazards</button><output aria-label="map route ids">{routes.map((route) => route.id).join('|')}</output><output aria-label="live fix">{liveLocation ? JSON.stringify(liveLocation) : 'none'}</output></> } }))
+jest.mock('@/components', () => ({ RoutePreviewMap: ({ routes = [], transitStops = [], restStopCandidates = [], liveLocation, onMapReady, onOriginChange, onBoundsChange, onRouteSelect, onNavigationProgress }: { routes?: Array<{ id: string }>; transitStops?: unknown[]; restStopCandidates?: Array<{ id: string }>; liveLocation?: { timestamp?: number } | null; onMapReady?: (ready: boolean) => void; onOriginChange?: (place: object) => void; onBoundsChange?: (bounds: object) => void; onRouteSelect?: (id: string) => void; onNavigationProgress?: (progress: object) => void }) => { mapTransitStops.push(transitStops); mapRestStops.push(restStopCandidates); return <><button type="button" onClick={() => onMapReady?.(true)}>Enable map</button><button type="button" onClick={() => routes.at(-1) && onRouteSelect?.(routes.at(-1)!.id)}>Select last map route</button><button type="button" onClick={() => onNavigationProgress?.({ remainingMeters: 500, heading: 0, isOffRoute: false, instruction: 'Belok kiri ke Jalan Utama', maneuver: 'TURN_LEFT', travelMode: 'WALK', distanceToManeuverMeters: 80 })}>Emit left maneuver</button><button type="button" onClick={() => onOriginChange?.({ id: 'dragged', label: 'Adjusted origin', detail: '', latitude: 1, longitude: 2 })}>Drag origin</button><button type="button" onClick={() => onBoundsChange?.({ north: 39, east: -119, south: 38, west: -121 })}>Load hazards</button><button type="button" onClick={() => onBoundsChange?.({ north: 39.1, east: -119, south: 38, west: -121 })}>Clear hazards</button><output aria-label="map route ids">{routes.map((route) => route.id).join('|')}</output><output aria-label="map rest stops">{restStopCandidates.map((place) => place.id).join('|')}</output><output aria-label="live fix">{liveLocation ? JSON.stringify(liveLocation) : 'none'}</output></> } }))
 jest.mock('@/components/common', () => ({ ConfirmationDialog: () => null }))
 jest.mock('@/context', () => ({ useToast: () => ({ showToast: jest.fn() }) }))
 jest.mock('@/hooks', () => ({
@@ -44,8 +45,9 @@ function taskOutcome(task: RouteComparisonTask, id: string): RouteComparisonOutc
 beforeEach(() => {
   jest.clearAllMocks()
   getCurrentPosition.mockReset()
-  mapTransitStops.length = 0
-  localStorage.clear()
+    mapTransitStops.length = 0
+    mapRestStops.length = 0
+    localStorage.clear()
   watchPosition.mockImplementation((success, error) => { watchSuccess = success; watchError = error; return 7 })
   Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { watchPosition, getCurrentPosition, clearWatch } })
 })
@@ -68,6 +70,47 @@ describe('Dashboard comparison groups', () => {
     expect(mutate.mock.calls[1][0].map((task: RouteComparisonTask) => task.id)).toEqual(['BICYCLE'])
     expect(screen.getByLabelText('comparison groups')).toHaveTextContent('Jalan:success|Sepeda:success')
     expect(screen.getByLabelText('map route ids')).toHaveTextContent('WALK:walk:duplicate|BICYCLE:cycle:duplicate')
+  })
+
+  it('shows rest stops only for the recommended route they belong to', async () => {
+    const comparison = { ...routeComparison('walk', [routeOption('recommended'), routeOption('alternative', [])]), restStopCandidates: { status: 'AVAILABLE' as const, candidates: [{ id: 'nearby-rest', name: 'Nearby rest', location: { latitude: 1, longitude: 2 }, types: ['cafe'], safetyVerified: false as const }] } }
+    mutate.mockImplementationOnce((tasks: RouteComparisonTask[], options) => options.onSuccess([{ task: tasks[0], status: 'success', comparison }]))
+    render(<DashboardPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Enable map' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Rencana' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Set hybrid' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit hybrid' }))
+    await waitFor(() => expect(screen.getByLabelText('map rest stops')).toHaveTextContent('nearby-rest'))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Select last map route' }))
+
+    expect(screen.getByLabelText('map rest stops')).toBeEmptyDOMElement()
+  })
+
+  it('shows only the selected route on the map while navigating', async () => {
+    const now = Date.now()
+    getCurrentPosition.mockImplementation((success: PositionCallback) => success({ timestamp: now, coords: { latitude: 1, longitude: 2, accuracy: 12, heading: null, speed: null } } as GeolocationPosition))
+    const comparison = routeComparison('walk', [routeOption('recommended'), routeOption('alternative', [])])
+    mutate.mockImplementationOnce((tasks: RouteComparisonTask[], options) => options.onSuccess([{ task: tasks[0], status: 'success', comparison }]))
+    render(<DashboardPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Enable map' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Rencana' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Use test current location' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Set destination' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit hybrid' }))
+    await waitFor(() => expect(screen.getByLabelText('map route ids')).toHaveTextContent('WALK:walk:recommended|WALK:walk:alternative'))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Start test guidance' }))
+
+    expect(screen.getByLabelText('map route ids')).toHaveTextContent('WALK:walk:recommended')
+    expect(screen.getByLabelText('map route ids')).not.toHaveTextContent('alternative')
+    fireEvent.click(screen.getByRole('button', { name: 'Emit left maneuver' }))
+    expect(screen.getByTestId('navigation-maneuver-icon')).toHaveClass('lucide-corner-up-left')
+    expect(screen.getByText('Belok kiri ke Jalan Utama')).toBeInTheDocument()
+    const stop = screen.getByRole('button', { name: 'Hentikan navigasi' })
+    expect(stop).not.toHaveClass('bg-ae-soft', 'hover:bg-ae-line')
+    fireEvent.click(screen.getByRole('button', { name: 'Rute' }))
+    expect(screen.getByLabelText('guidance action')).toHaveTextContent('false')
   })
 
   it('removes a successful transit fallback from the map when the composite succeeds', async () => {
@@ -103,15 +146,15 @@ describe('Dashboard comparison groups', () => {
     expect(abort).toHaveBeenCalled()
   })
 
-  it('timestamps live fixes, clears the retained watch on error, and marks only successful current-location origin', async () => {
+  it('timestamps live fixes, retains them after transient watch errors, and marks only successful current-location origin', async () => {
     getCurrentPosition.mockImplementation((success: PositionCallback) => success({ timestamp: Date.now(), coords: { latitude: 1, longitude: 2, accuracy: 12, heading: null, speed: null } } as GeolocationPosition))
     render(<DashboardPage />)
     const timestamp = Date.now()
     act(() => watchSuccess({ timestamp, coords: { latitude: 1, longitude: 2, accuracy: 10, heading: null, speed: null } } as GeolocationPosition))
     expect(screen.getByLabelText('live fix')).toHaveTextContent(`"timestamp":${timestamp}`)
     act(() => watchError({ code: 2 } as GeolocationPositionError))
-    expect(clearWatch).toHaveBeenCalledWith(7)
-    expect(screen.getByLabelText('live fix')).toHaveTextContent('none')
+    expect(clearWatch).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('live fix')).toHaveTextContent(`"timestamp":${timestamp}`)
     await userEvent.click(screen.getByRole('button', { name: 'Enable map' }))
     await userEvent.click(screen.getByRole('button', { name: 'Rencana' }))
     await userEvent.click(screen.getByRole('button', { name: 'Use test current location' }))
@@ -156,6 +199,21 @@ describe('Dashboard comparison groups', () => {
     expect(screen.getByLabelText('location pending')).toHaveTextContent('false')
   })
 
+  it('does not leave a timeout error after the location watch supplies a valid fix', async () => {
+    const requests: Array<{ success: PositionCallback; error: PositionErrorCallback }> = []
+    getCurrentPosition.mockImplementation((success, error) => requests.push({ success, error }))
+    render(<DashboardPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Enable map' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Rencana' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Use test current location' }))
+    act(() => requests[0].error({ code: 3 } as GeolocationPositionError))
+    act(() => watchSuccess({ timestamp: Date.now(), coords: { latitude: 1, longitude: 2, accuracy: 10, heading: null, speed: null } } as GeolocationPosition))
+    act(() => requests[1].error({ code: 3 } as GeolocationPositionError))
+
+    expect(screen.getByLabelText('origin error')).toBeEmptyDOMElement()
+    expect(screen.getByLabelText('live fix')).toHaveTextContent('"accuracy":10')
+  })
+
   it('expires guidance at 15 seconds with one timeout and rechecks road-report location freshness', () => {
     jest.useFakeTimers()
     const timestamp = Date.now()
@@ -170,9 +228,35 @@ describe('Dashboard comparison groups', () => {
     act(() => mutate.mock.calls.at(-1)![1].onSuccess([taskOutcome(tasks[0], 'walk')]))
     expect(screen.getByLabelText('guidance eligible')).toHaveTextContent('true')
     act(() => jest.advanceTimersByTime(15_001))
-    expect(screen.getByLabelText('guidance message')).toHaveTextContent('Lokasi sudah kedaluwarsa.')
+    expect(screen.getByLabelText('guidance message')).toHaveTextContent('Lokasi presisi akan diperiksa saat navigasi dimulai.')
     fireEvent.click(screen.getByRole('button', { name: 'Lapor' }))
     expect(getCurrentPosition).toHaveBeenCalledTimes(2)
+    jest.useRealTimers()
+  })
+
+  it('refreshes a stale fix when navigation starts instead of leaving the action blocked', () => {
+    jest.useFakeTimers()
+    const firstTimestamp = Date.now()
+    let locationRequests = 0
+    getCurrentPosition.mockImplementation((success: PositionCallback) => {
+      locationRequests += 1
+      success({ timestamp: locationRequests === 1 ? firstTimestamp : Date.now(), coords: { latitude: 1, longitude: 2, accuracy: 12, heading: null, speed: null } } as GeolocationPosition)
+    })
+    render(<DashboardPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Enable map' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rencana' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Use test current location' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Set destination' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Submit hybrid' }))
+    const tasks = mutate.mock.calls.at(-1)![0] as RouteComparisonTask[]
+    act(() => mutate.mock.calls.at(-1)![1].onSuccess([taskOutcome(tasks[0], 'walk')]))
+    act(() => jest.advanceTimersByTime(15_001))
+    expect(screen.getByLabelText('guidance message')).toHaveTextContent('Lokasi presisi akan diperiksa saat navigasi dimulai.')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start test guidance' }))
+
+    expect(getCurrentPosition).toHaveBeenCalledTimes(2)
+    expect(screen.getByRole('button', { name: 'Hentikan navigasi' })).toBeInTheDocument()
     jest.useRealTimers()
   })
 

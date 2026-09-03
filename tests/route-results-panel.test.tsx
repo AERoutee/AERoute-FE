@@ -37,6 +37,21 @@ describe('RouteResultsPanel single itinerary', () => {
     expect(screen.queryByText('Cleanest departure')).not.toBeInTheDocument()
   })
 
+  it('keeps navigation usable and labels unavailable PM2.5 honestly', () => {
+    const route = { ...routeOption('routing-only'), labels: ['FASTEST', 'RECOMMENDED'] as RouteOption['labels'], dataQuality: 'unavailable' as const, averagePm25: null, airQualityTimestamp: null, estimatedExposureIndex: null, reductionFromFastestPercent: null, reductionPercent: null, airQualitySampleCount: 0, airQualitySamples: [] }
+    const comparison = { ...routeComparison('routing-only', [route]), persisted: false, cleanestDeparture: null }
+    const request = plannerRequest('WALK')
+    const view = routeViews('WALK', ['WALK'], request, comparison)[0]
+    const groups = [{ task: { id: 'WALK' as const, label: 'Walk', selectedModes: ['WALK'] as const, request }, status: 'success' as const, comparison }]
+
+    render(<RouteResultsPanel groups={groups} selected={view} canStartNavigation {...handlers} />)
+
+    expect(screen.getByText('PM2.5 tidak tersedia')).toBeInTheDocument()
+    expect(screen.getByText('Waktu terbaik').nextElementSibling).toHaveTextContent('Tidak tersedia')
+    expect(screen.getByRole('button', { name: 'Mulai navigasi' })).toBeEnabled()
+    expect(screen.queryByText(/lebih rendah/)).not.toBeInTheDocument()
+  })
+
   it('collapses rationale and warnings and omits standard accessibility', () => {
     const comparison = { ...routeComparison('trip'), warnings: ['Forecast coverage is partial.'] }
     const request = plannerRequest('WALK')
@@ -61,6 +76,18 @@ describe('RouteResultsPanel single itinerary', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Cycle gagal')
     await userEvent.click(screen.getByRole('button', { name: 'Coba lagi rute Cycle' }))
     expect(handlers.onRetry).toHaveBeenCalledWith('BICYCLE')
+  })
+
+  it('hides stale retry cards while replacement routes are loading', () => {
+    const request = plannerRequest('BICYCLE')
+    const error = Object.assign(new Error('Cycling provider unavailable.'), { retryable: true })
+    const groups = [{ task: { id: 'BICYCLE' as const, label: 'Cycle', selectedModes: ['BICYCLE'] as const, request }, status: 'error' as const, error }]
+
+    render(<RouteResultsPanel groups={groups} isPending canStartNavigation={false} {...handlers} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Membandingkan rute.')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Coba lagi rute Cycle' })).not.toBeInTheDocument()
   })
 
   it('renders duplicate raw route ids in separate mode groups', () => {
@@ -205,6 +232,16 @@ describe('RouteResultsPanel single itinerary', () => {
     expect(disabled).toBeDisabled()
     expect(disabled.parentElement).toHaveClass('shrink-0')
     expect(screen.getByText('Bergeraklah hingga berjarak maksimal 150 m dari titik awal rute.')).toBeInTheDocument()
+
+    rendered.rerender(<RouteResultsPanel groups={groups} selected={view} canStartNavigation={false} canRefreshLocation guidanceMessage="Lokasi sudah kedaluwarsa." {...handlers} />)
+    expect(screen.getByRole('button', { name: 'Mulai navigasi' })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: 'Perbarui lokasi' })).not.toBeInTheDocument()
+
+    rendered.rerender(<RouteResultsPanel groups={groups} selected={view} canStartNavigation={false} canRefreshLocation isStartPending guidanceMessage="Lokasi sudah kedaluwarsa." {...handlers} />)
+    expect(screen.getByRole('button', { name: 'Memulai navigasi...' })).toBeDisabled()
+
+    rendered.rerender(<RouteResultsPanel groups={groups} selected={view} canStartNavigation={false} canRefreshLocation guidanceMessage="Lokasi presisi akan diperiksa saat navigasi dimulai." {...handlers} />)
+    expect(screen.getByText('Lokasi presisi akan diperiksa saat navigasi dimulai.')).toBeInTheDocument()
 
     rendered.rerender(<RouteResultsPanel groups={groups} selected={view} canStartNavigation guidanceMessage="Lokasi saat ini siap di titik awal rute." {...handlers} />)
     expect(screen.getByRole('button', { name: 'Mulai navigasi' })).toBeEnabled()

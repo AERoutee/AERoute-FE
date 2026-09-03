@@ -40,7 +40,7 @@ describe('PlannerPanel direct mode controls', () => {
   it('offers five checkbox choices in one equal compact row with preference guidance', () => {
     const { container } = render(<PlannerPanel {...props} />)
     for (const name of ['Jalan', 'Sepeda', 'Bus', 'Kereta', 'MRT']) expect(screen.getByRole('checkbox', { name })).toBeInTheDocument()
-    expect(screen.getByText('Pilih maksimal 3 moda. Kombinasi yang tersedia akan ditampilkan.')).toBeInTheDocument()
+    expect(screen.getByText('Pilih moda yang boleh digunakan. Kombinasi yang tersedia akan ditampilkan.')).toBeInTheDocument()
     const grid = screen.getByRole('checkbox', { name: 'Jalan' }).closest('div')
     expect(grid).toHaveClass('grid-cols-5', 'gap-1.5')
     for (const checkbox of screen.getAllByRole('checkbox').slice(0, 5)) {
@@ -49,7 +49,7 @@ describe('PlannerPanel direct mode controls', () => {
     expect(container.querySelector('.sm\\:grid-cols-5')).not.toBeInTheDocument()
   })
 
-  it('keeps one mode, allows bicycle with transit, and disables unchecked modes at three', async () => {
+  it('keeps one mode and allows every travel mode', async () => {
     const view = render(<PlannerPanel {...props} />)
     await userEvent.click(screen.getByRole('checkbox', { name: 'Jalan' }))
     expect(props.onSelectedModesChange).not.toHaveBeenCalled()
@@ -63,9 +63,13 @@ describe('PlannerPanel direct mode controls', () => {
     expect(props.onSelectedModesChange).toHaveBeenLastCalledWith(['WALK', 'BICYCLE', 'TRAIN'])
 
     view.rerender(<PlannerPanel {...props} selectedModes={['WALK', 'BICYCLE', 'TRAIN']} />)
-    expect(screen.getByRole('checkbox', { name: 'Bus' })).toBeDisabled()
-    expect(screen.getByRole('checkbox', { name: 'MRT' })).toBeDisabled()
-    expect(screen.getByRole('checkbox', { name: 'Jalan' })).toBeEnabled()
+    expect(screen.getByRole('checkbox', { name: 'Bus' })).toBeEnabled()
+    expect(screen.getByRole('checkbox', { name: 'MRT' })).toBeEnabled()
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Bus' }))
+    expect(props.onSelectedModesChange).toHaveBeenLastCalledWith(['WALK', 'BICYCLE', 'BUS', 'TRAIN'])
+    view.rerender(<PlannerPanel {...props} selectedModes={['WALK', 'BICYCLE', 'BUS', 'TRAIN']} />)
+    await userEvent.click(screen.getByRole('checkbox', { name: 'MRT' }))
+    expect(props.onSelectedModesChange).toHaveBeenLastCalledWith(['WALK', 'BICYCLE', 'BUS', 'TRAIN', 'SUBWAY'])
   })
 
   it('shows only transit priority when an itinerary includes transit', () => {

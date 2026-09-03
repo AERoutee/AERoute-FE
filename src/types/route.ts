@@ -75,8 +75,9 @@ export type HazardSummary = {
   limitations: string[]
 }
 
+export type NavigationStep = { instruction: string; maneuver?: string; travelMode: string; durationSeconds?: number; distanceMeters?: number; encodedPolyline?: string; startLocation?: { latitude: number; longitude: number }; endLocation?: { latitude: number; longitude: number } }
 export type TransitStation = { name: string; location?: { latitude: number; longitude: number } }
-type TransitSegmentDetails = { lineName?: string; lineShortName?: string; vehicleType?: string; headsign?: string; departureStop?: TransitStation; arrivalStop?: TransitStation; stopCount?: number; durationSeconds?: number; distanceMeters?: number; encodedPolyline?: string; startLocation?: { latitude: number; longitude: number }; endLocation?: { latitude: number; longitude: number }; departureTime?: string; arrivalTime?: string }
+type TransitSegmentDetails = { instruction?: string; maneuver?: string; lineName?: string; lineShortName?: string; vehicleType?: string; headsign?: string; departureStop?: TransitStation; arrivalStop?: TransitStation; stopCount?: number; durationSeconds?: number; distanceMeters?: number; encodedPolyline?: string; startLocation?: { latitude: number; longitude: number }; endLocation?: { latitude: number; longitude: number }; departureTime?: string; arrivalTime?: string }
 export type TransitSegment = TransitSegmentDetails & ({ travelMode: string; mode?: never; role?: never; source?: never; location?: never } | { travelMode?: never; role: 'FIRST_MILE' | 'WAIT' | 'TRANSIT_RIDE' | 'TRANSFER_WALK' | 'LAST_MILE'; source: 'GOOGLE_ROUTES' | 'DERIVED_FROM_TRANSIT_SCHEDULE'; mode: 'BICYCLE' | 'WAIT' | 'TRANSIT' | 'WALK'; durationSeconds: number; distanceMeters: number; location?: { latitude: number; longitude: number } })
 export type TransitStop = { name: string; location: { latitude: number; longitude: number }; ordinal: number; role: 'departure' | 'arrival'; vehicleType: string; line?: string; headsign?: string; label: string }
 export type TransitSummary = {
@@ -96,14 +97,14 @@ export type RouteOption = {
   providerLabels: string[]
   durationSeconds: number
   distanceMeters: number
-  estimatedExposureIndex: number
+  estimatedExposureIndex: number | null
   exposureUnit: 'ug_m3_minutes'
-  reductionFromFastestPercent: number
-  reductionPercent: number
+  reductionFromFastestPercent: number | null
+  reductionPercent: number | null
   encodedPolyline: string
-  dataQuality: 'modeled_estimate' | 'partial_estimate'
-  airQualityTimestamp: string
-  averagePm25: number
+  dataQuality: 'modeled_estimate' | 'partial_estimate' | 'unavailable'
+  airQualityTimestamp: string | null
+  averagePm25: number | null
   airQualitySampleCount: number
   airQualityExpectedSampleCount: number
   airQualitySamples: Array<{ latitude: number; longitude: number; pm25: number }>
@@ -112,6 +113,7 @@ export type RouteOption = {
   explanation: { summary: string; reasons: string[]; tradeoffs: string[]; limitations: string[]; ruleVersion: 'route-ranking-v2' }
   heatUv: HeatUvSummary
   weatherConditions: WeatherConditions[]
+  navigationSteps?: NavigationStep[]
   transitSummary?: TransitSummary
   composition?: 'PROVIDER_SEGMENTS'
   scheduleStatus?: 'SCHEDULE_VALIDATED'
@@ -171,7 +173,7 @@ export type RouteComparison = {
   calculationVersion: 'route-intelligence-v2'
   routes: RouteOption[]
   departureComparisons: DepartureComparison[]
-  cleanestDeparture: 0 | 30 | 60
+  cleanestDeparture: 0 | 30 | 60 | null
   weather: WeatherConditions
   weatherPoints: Array<{ latitude: number; longitude: number; conditions: WeatherConditions }>
   weatherPointsByRoute: Record<string, Array<{ latitude: number; longitude: number; conditions: WeatherConditions }>>

@@ -38,7 +38,7 @@ type RoutePreviewMapProps = {
   weatherPoints?: Array<{ latitude: number; longitude: number; conditions: WeatherConditions }>
   navigationRoute?: RouteOption | null
   navigationSession?: number
-  onNavigationProgress?: (progress: { remainingMeters: number; heading: number; isOffRoute: boolean }) => void
+  onNavigationProgress?: (progress: { remainingMeters: number; heading: number; isOffRoute: boolean; instruction?: string; maneuver?: string; travelMode?: string; distanceToManeuverMeters?: number }) => void
   onOriginChange?: (place: Place) => void
   onDestinationChange?: (place: Place) => void
   onBoundsChange?: (bounds: RoadReportBounds) => void
@@ -94,13 +94,48 @@ function headingBetween(a: google.maps.LatLngLiteral, b: google.maps.LatLngLiter
 function snapToRoute(location: google.maps.LatLngLiteral, route: RouteOption) {
   const path = decodePolyline(route.encodedPolyline)
   if (path.length < 2) return null
-  let nearestIndex = 0
+  const latitudeScale = 111_320
+  const longitudeScale = latitudeScale * Math.cos(location.lat * Math.PI / 180)
+  let nearestSegment = 0
+  let nearestProgress = 0
   let nearestDistance = Number.POSITIVE_INFINITY
-  path.forEach((point, index) => { const distance = distanceMeters(location, point); if (distance < nearestDistance) { nearestDistance = distance; nearestIndex = index } })
-  let remainingMeters = 0
-  for (let index = nearestIndex; index < path.length - 1; index += 1) remainingMeters += distanceMeters(path[index], path[index + 1])
-  const next = path[Math.min(path.length - 1, nearestIndex + 1)]
-  return { position: path[nearestIndex], heading: headingBetween(path[nearestIndex], next), remainingMeters, isOffRoute: nearestDistance > 75 }
+  for (let index = 0; index < path.length - 1; index += 1) {
+    const start = path[index], end = path[index + 1]
+    const startX = (start.lng - location.lng) * longitudeScale, startY = (start.lat - location.lat) * latitudeScale
+    const endX = (end.lng - location.lng) * longitudeScale, endY = (end.lat - location.lat) * latitudeScale
+    const deltaX = endX - startX, deltaY = endY - startY
+    const progress = Math.max(0, Math.min(1, -(startX * deltaX + startY * deltaY) / Math.max(1, deltaX ** 2 + deltaY ** 2)))
+    const distance = Math.hypot(startX + deltaX * progress, startY + deltaY * progress)
+    if (distance < nearestDistance) { nearestDistance = distance; nearestSegment = index; nearestProgress = progress }
+  }
+  const start = path[nearestSegment], next = path[nearestSegment + 1]
+  const position = { lat: start.lat + (next.lat - start.lat) * nearestProgress, lng: start.lng + (next.lng - start.lng) * nearestProgress }
+  let remainingMeters = distanceMeters(position, next)
+  for (let index = nearestSegment + 1; index < path.length - 1; index += 1) remainingMeters += distanceMeters(path[index], path[index + 1])
+  let totalMeters = remainingMeters
+  for (let index = 0; index < nearestSegment; index += 1) totalMeters += distanceMeters(path[index], path[index + 1])
+  totalMeters += distanceMeters(start, position)
+  return { position, heading: headingBetween(start, next), remainingMeters, totalMeters, isOffRoute: nearestDistance > 75 }
+}
+
+function activeNavigationStep(route: RouteOption, remainingMeters: number, totalMeters: number) {
+  const steps = route.navigationSteps
+  if (!steps?.length) return null
+  const traveledMeters = route.distanceMeters * (1 - remainingMeters / Math.max(1, totalMeters))
+  let completedMeters = 0
+  for (const step of steps) {
+    const stepMeters = step.distanceMeters ?? 0
+    if (completedMeters + stepMeters >= traveledMeters) return { ...step, distanceToManeuverMeters: Math.max(0, completedMeters + stepMeters - traveledMeters) }
+    completedMeters += stepMeters
+  }
+  return { ...steps.at(-1)!, distanceToManeuverMeters: 0 }
+}
+
+function routeIdentityColor(route: RouteOption) {
+  if (route.labels.includes('RECOMMENDED')) return '#087f5b'
+  if (route.labels.includes('LOWEST_EXPOSURE')) return '#2457a7'
+  if (route.labels.includes('FASTEST')) return '#a83b24'
+  return '#4f6159'
 }
 
 function checkpointIcon(kind: 'origin' | 'destination') {
@@ -453,7 +488,9 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
   const mapRef = useRef<google.maps.Map | null>(null)
   const locationMarkerRef = useRef<google.maps.Marker | null>(null)
   const locationHeadingRef = useRef<number | null>(null)
-  const checkpointOverlays = useRef<Array<google.maps.Marker | google.maps.Polyline>>([])
+  const originMarkerRef = useRef<google.maps.Marker | null>(null)
+  const destinationMarkerRef = useRef<google.maps.Marker | null>(null)
+  const routePolylinesRef = useRef<google.maps.Polyline[]>([])
   const reportMarkers = useRef<google.maps.Marker[]>([])
   const reportInfoWindowRef = useRef<google.maps.InfoWindow | null>(null)
   const reportPopupHostRef = useRef<HTMLElement | null>(null)
@@ -647,29 +684,40 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    checkpointOverlays.current.forEach((overlay) => overlay.setMap(null))
-    checkpointOverlays.current = []
-    const bounds = new google.maps.LatLngBounds()
-    if (origin && !followLiveLocation) {
-      const marker = new google.maps.Marker({ map, position: { lat: origin.latitude, lng: origin.longitude }, title: `Asal: ${origin.label}`, icon: checkpointIcon('origin'), draggable: !followLiveLocation && Boolean(callbacks.current.onOriginChange), optimized: false })
-      marker.addListener('dragend', () => { const position = marker.getPosition(); if (position && callbacks.current.onOriginChange) { callbacks.current.onOriginChange({ ...origin, id: `map-origin-${position.lat()}-${position.lng()}`, label: 'Adjusted origin', detail: 'Checkpoint moved on map', latitude: position.lat(), longitude: position.lng() }) } })
-      checkpointOverlays.current.push(marker); bounds.extend(marker.getPosition()!)
-    }
-    if (destination) {
+    if (!origin || followLiveLocation) originMarkerRef.current?.setMap(null)
+    else if (!originMarkerRef.current) {
+      const marker = new google.maps.Marker({ map, position: { lat: origin.latitude, lng: origin.longitude }, title: `Asal: ${origin.label}`, icon: checkpointIcon('origin'), draggable: Boolean(callbacks.current.onOriginChange), optimized: false })
+      marker.addListener('dragend', () => { const position = marker.getPosition(); if (position && callbacks.current.onOriginChange) callbacks.current.onOriginChange({ id: `map-origin-${position.lat()}-${position.lng()}`, label: 'Adjusted origin', detail: 'Checkpoint moved on map', latitude: position.lat(), longitude: position.lng() }) })
+      originMarkerRef.current = marker
+    } else { originMarkerRef.current.setMap(map); originMarkerRef.current.setPosition({ lat: origin.latitude, lng: origin.longitude }); originMarkerRef.current.setTitle(`Asal: ${origin.label}`); originMarkerRef.current.setDraggable(Boolean(callbacks.current.onOriginChange)) }
+    if (!destination) destinationMarkerRef.current?.setMap(null)
+    else if (!destinationMarkerRef.current) {
       const marker = new google.maps.Marker({ map, position: { lat: destination.latitude, lng: destination.longitude }, title: `Tujuan: ${destination.label}`, icon: checkpointIcon('destination'), draggable: !followLiveLocation && Boolean(callbacks.current.onDestinationChange), optimized: false })
-      marker.addListener('dragend', () => { const position = marker.getPosition(); if (position && callbacks.current.onDestinationChange) { callbacks.current.onDestinationChange({ ...destination, id: `map-destination-${position.lat()}-${position.lng()}`, label: 'Adjusted destination', detail: 'Checkpoint moved on map', latitude: position.lat(), longitude: position.lng() }) } })
-      checkpointOverlays.current.push(marker); bounds.extend(marker.getPosition()!)
-    }
+      marker.addListener('dragend', () => { const position = marker.getPosition(); if (position && callbacks.current.onDestinationChange) callbacks.current.onDestinationChange({ id: `map-destination-${position.lat()}-${position.lng()}`, label: 'Adjusted destination', detail: 'Checkpoint moved on map', latitude: position.lat(), longitude: position.lng() }) })
+      destinationMarkerRef.current = marker
+    } else { destinationMarkerRef.current.setMap(map); destinationMarkerRef.current.setPosition({ lat: destination.latitude, lng: destination.longitude }); destinationMarkerRef.current.setTitle(`Tujuan: ${destination.label}`); destinationMarkerRef.current.setDraggable(!followLiveLocation && Boolean(callbacks.current.onDestinationChange)) }
+  }, [destination, followLiveLocation, mapVersion, origin])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    routePolylinesRef.current.forEach((line) => line.setMap(null))
+    routePolylinesRef.current = []
+    const bounds = new google.maps.LatLngBounds()
+    if (origin) bounds.extend({ lat: origin.latitude, lng: origin.longitude })
+    if (destination) bounds.extend({ lat: destination.latitude, lng: destination.longitude })
     routes.forEach((route) => {
       const path = decodePolyline(route.encodedPolyline)
       path.forEach((point) => bounds.extend(point))
       const selected = !selectedId || route.id === selectedId
       const hitLine = new google.maps.Polyline({ map, path, strokeOpacity: 0, strokeWeight: 24, clickable: true, zIndex: selected ? 5 : 2 })
-      const visualLines = coloredRouteSegments(path, route.airQualitySamples ?? [], route.airQualityExpectedSampleCount).map((segment) => new google.maps.Polyline({ map, path: segment.path, strokeColor: segment.color, strokeOpacity: selected ? 1 : .25, strokeWeight: selected ? 8 : 5, clickable: false, zIndex: selected ? 3 : 1 }))
+      const identityLine = new google.maps.Polyline({ map, path, strokeColor: followLiveLocation ? '#087f5b' : routeIdentityColor(route), strokeOpacity: selected ? 1 : .25, strokeWeight: selected ? 8 : 5, clickable: false, zIndex: selected ? 3 : 1 })
+      const segments = followLiveLocation ? [] : coloredRouteSegments(path, route.airQualitySamples ?? [], route.airQualityExpectedSampleCount).filter((segment) => segment.level !== 'unavailable')
+      const visualLines = [identityLine, ...segments.map((segment) => new google.maps.Polyline({ map, path: segment.path, strokeColor: segment.color, strokeOpacity: selected ? 1 : .25, strokeWeight: selected ? 8 : 5, clickable: false, zIndex: selected ? 4 : 2 }))]
       hitLine.addListener('click', () => callbacks.current.onRouteSelect?.(route.id))
       hitLine.addListener('mouseover', () => visualLines.forEach((line) => line.setOptions({ strokeOpacity: 1, strokeWeight: selected ? 10 : 8 })))
       hitLine.addListener('mouseout', () => visualLines.forEach((line) => line.setOptions({ strokeOpacity: selected ? 1 : .25, strokeWeight: selected ? 8 : 5 })))
-      checkpointOverlays.current.push(hitLine, ...visualLines)
+      routePolylinesRef.current.push(hitLine, ...visualLines)
     })
     const fitSignature = `${origin?.latitude},${origin?.longitude}|${destination?.latitude},${destination?.longitude}|${routes.map((route) => route.encodedPolyline).join('|')}`
     if ((origin || destination || routes.length) && fitSignature !== lastFitSignatureRef.current) { lastFitSignatureRef.current = fitSignature; map.fitBounds(bounds, { top: 150, right: 96, bottom: 96, left: 96 }) }
@@ -680,10 +728,13 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     if (!map || !liveLocation) return
     const rawPosition = { lat: liveLocation.latitude, lng: liveLocation.longitude }
     const snapped = navigationRoute ? snapToRoute(rawPosition, navigationRoute) : null
-    const position = snapped && !snapped.isOffRoute ? snapped.position : rawPosition
+    const position = rawPosition
     const heading = snapped && !snapped.isOffRoute ? snapped.heading : liveLocation.heading
     displayedLocationRef.current = position
-    if (snapped) callbacks.current.onNavigationProgress?.({ remainingMeters: snapped.remainingMeters, heading, isOffRoute: snapped.isOffRoute })
+    if (snapped) {
+      const step = navigationRoute ? activeNavigationStep(navigationRoute, snapped.remainingMeters, snapped.totalMeters) : null
+      callbacks.current.onNavigationProgress?.({ remainingMeters: snapped.remainingMeters, heading, isOffRoute: snapped.isOffRoute, ...(step ? { instruction: step.instruction, ...(step.maneuver ? { maneuver: step.maneuver } : {}), travelMode: step.travelMode, distanceToManeuverMeters: step.distanceToManeuverMeters } : {}) })
+    }
     const icon = liveLocationIcon(heading)
     if (!locationMarkerRef.current) { locationHeadingRef.current = icon.heading; locationMarkerRef.current = new google.maps.Marker({ map, position, icon, title: 'Lokasi Anda saat ini', zIndex: 10, optimized: false }) }
     else { locationMarkerRef.current.setPosition(position); if (locationHeadingRef.current !== icon.heading) { locationHeadingRef.current = icon.heading; locationMarkerRef.current.setIcon(icon) } }
@@ -691,7 +742,10 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
       initialLocationCameraMapRef.current = map
       if (!origin && !destination && routes.length === 0 && !followLiveLocation) map.setCenter(rawPosition)
     }
-    if (followLiveLocation && cameraFollowingRef.current) { map.panTo(position); if (navigationRoute && (map.getZoom() ?? 0) < 17) map.setZoom(17) }
+    if (followLiveLocation && cameraFollowingRef.current) {
+      if (navigationRoute && (map.getZoom() ?? 0) < 17) map.moveCamera({ center: position, zoom: 17 })
+      else map.panTo(position)
+    }
   }, [destination, followLiveLocation, liveLocation, mapVersion, navigationRoute, origin, routes])
 
   useEffect(() => {
@@ -827,7 +881,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     })
   }, [checkStreetView, closePlacePopup, dismissPopupPeers, mapVersion, restStopCandidates, showAccessiblePlaces, showRestStops])
 
-  useEffect(() => () => { closeStreetView(); transitStopRequestRef.current += 1; transitStopControllerRef.current?.abort(); weatherMarkersRef.current.forEach((marker) => marker.setMap(null)); placeMarkersRef.current.forEach((marker) => marker.setMap(null)); transitStopMarkersRef.current.forEach((marker) => marker.setMap(null)); transitStopInfoWindowRef.current?.close(); placeInfoWindowRef.current?.close(); reportInfoWindowRef.current?.close(); checkpointOverlays.current.forEach((overlay) => overlay.setMap(null)); reportMarkers.current.forEach((marker) => marker.setMap(null)); locationMarkerRef.current?.setMap(null) }, [closeStreetView])
+  useEffect(() => () => { closeStreetView(); transitStopRequestRef.current += 1; transitStopControllerRef.current?.abort(); weatherMarkersRef.current.forEach((marker) => marker.setMap(null)); placeMarkersRef.current.forEach((marker) => marker.setMap(null)); transitStopMarkersRef.current.forEach((marker) => marker.setMap(null)); transitStopInfoWindowRef.current?.close(); placeInfoWindowRef.current?.close(); reportInfoWindowRef.current?.close(); originMarkerRef.current?.setMap(null); destinationMarkerRef.current?.setMap(null); routePolylinesRef.current.forEach((line) => line.setMap(null)); reportMarkers.current.forEach((marker) => marker.setMap(null)); locationMarkerRef.current?.setMap(null) }, [closeStreetView])
 
   return <div className="relative h-full min-h-[28rem] overflow-hidden bg-white"><div className="absolute inset-0" ref={nodeRef} aria-label={origin && destination ? `Peta dari ${origin.label} ke ${destination.label}` : 'Peta rute Jakarta'} />{reportPopupHost && selectedReport && reportPopup && <ReportPopupPortal host={reportPopupHost} report={selectedReport} render={reportPopup} onClose={closeReportPopup} />}{streetViewVisible && <button ref={streetViewCloseRef} type="button" onClick={closeStreetView} className="absolute top-[calc(max(.75rem,env(safe-area-inset-top))+5rem)] left-3 z-[90] inline-flex min-h-11 items-center gap-2 rounded-xl border border-ae-line bg-white px-4 text-sm font-black text-ae-ink shadow-lg lg:left-5"><ArrowLeft className="size-4" aria-hidden="true" />Kembali ke peta</button>}{followLiveLocation && !cameraFollowing && !streetViewVisible && <button type="button" onClick={() => { const position = displayedLocationRef.current; if (!position || !mapRef.current) return; cameraFollowingRef.current = true; setCameraPausedSession(null); mapRef.current.panTo(position); if ((mapRef.current.getZoom() ?? 0) < 17) mapRef.current.setZoom(17) }} className="absolute right-3 bottom-24 z-20 inline-flex min-h-11 items-center gap-2 rounded-xl border border-ae-line bg-white px-4 text-sm font-black text-ae-brand shadow-lg lg:right-5 lg:bottom-5"><LocateFixed className="size-4" aria-hidden="true" />Fokus ke lokasi</button>}{status === 'loading' && <div className="absolute inset-0 grid place-items-center bg-white"><span className="inline-flex items-center gap-2 text-sm font-extrabold text-ae-brand"><LoaderCircle className="size-5 animate-spin" />Memuat...</span></div>}{(status === 'unavailable' || status === 'error') && <div className="absolute inset-0 grid place-items-center bg-white p-6"><div className="text-center">{status === 'error' ? <TriangleAlert className="mx-auto size-8 text-ae-fastest" /> : <MapPinned className="mx-auto size-8 text-ae-brand" />}<strong className="mt-3 block text-base font-black">Map unavailable</strong></div></div>}</div>
 }

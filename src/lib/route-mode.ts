@@ -55,7 +55,6 @@ export function savedCommuteRequest(commute: SavedCommute, origin: Place, destin
 
 export function nextModeSelection(current: readonly DirectTravelMode[], mode: DirectTravelMode): DirectTravelMode[] {
   if (current.includes(mode)) return current.length === 1 ? [...current] : orderedModes(current.filter((item) => item !== mode))
-  if (current.length === 3) return [...current]
   return orderedModes([...current, mode])
 }
 

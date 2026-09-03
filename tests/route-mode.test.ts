@@ -14,14 +14,14 @@ describe('single-itinerary mode data', () => {
     expect(itineraryModeRequest(modes)).toEqual(expected)
   })
 
-  it('enforces min one, max three, and deterministic mode ordering', () => {
+  it('keeps at least one mode and allows all five in deterministic order', () => {
     expect(nextModeSelection(['WALK'], 'WALK')).toEqual(['WALK'])
     expect(nextModeSelection(['WALK'], 'BICYCLE')).toEqual(['WALK', 'BICYCLE'])
     expect(nextModeSelection(['BICYCLE'], 'WALK')).toEqual(['WALK', 'BICYCLE'])
     expect(nextModeSelection(['WALK', 'BICYCLE'], 'BUS')).toEqual(['WALK', 'BICYCLE', 'BUS'])
     expect(nextModeSelection(['BICYCLE'], 'TRAIN')).toEqual(['BICYCLE', 'TRAIN'])
     expect(nextModeSelection(['TRAIN'], 'BUS')).toEqual(['BUS', 'TRAIN'])
-    expect(nextModeSelection(['WALK', 'BICYCLE', 'BUS'], 'TRAIN')).toEqual(['WALK', 'BICYCLE', 'BUS'])
+    expect(nextModeSelection(['WALK', 'BICYCLE', 'BUS', 'TRAIN'], 'SUBWAY')).toEqual(['WALK', 'BICYCLE', 'BUS', 'TRAIN', 'SUBWAY'])
   })
 
   it('builds ordered composite and native fallback transit tasks', () => {
@@ -45,6 +45,10 @@ describe('single-itinerary mode data', () => {
     expect(itineraryModeRequests(['BICYCLE', 'BUS', 'TRAIN'], common).map(({ id, label }) => ({ id, label }))).toEqual([
       { id: 'BIKE_TRANSIT', label: 'Sepeda + Bus + Kereta' },
       { id: 'TRANSIT_FALLBACK', label: 'Bus + Kereta' },
+    ])
+    expect(itineraryModeRequests(['WALK', 'BICYCLE', 'BUS', 'TRAIN', 'SUBWAY'], common)).toEqual([
+      { id: 'BIKE_TRANSIT', label: 'Sepeda + Bus + Kereta + MRT + Jalan', selectedModes: ['WALK', 'BICYCLE', 'BUS', 'TRAIN', 'SUBWAY'], request: { ...common, mode: 'TRANSIT', transitModes: ['BUS', 'TRAIN', 'SUBWAY'], accessPlan: { firstMileMode: 'BICYCLE', lastMileMode: 'WALK', bicyclePlan: 'PARK_AT_FIRST_TRANSIT_STOP' }, departureOffsetsMinutes: [0], includeRestStops: false } },
+      { id: 'TRANSIT_FALLBACK', label: 'Bus + Kereta + MRT', selectedModes: ['BUS', 'TRAIN', 'SUBWAY'], request: { ...common, mode: 'TRANSIT', transitModes: ['BUS', 'TRAIN', 'SUBWAY'] } },
     ])
   })
 

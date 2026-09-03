@@ -1,4 +1,4 @@
-import { RefreshCw, X } from 'lucide-react'
+import { ArrowUp, CornerUpLeft, CornerUpRight, MapPinCheck, Navigation, Redo2, RefreshCw, TrainFront, Undo2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react'
 import { useLocation } from 'react-router'
 import { compareRoutes, getNearbyRoadReports } from '@/api'
@@ -35,6 +35,18 @@ function formatDuration(seconds: number) {
   if (minutes >= 1440) return `${Math.floor(minutes / 1440)}d ${Math.round(minutes % 1440 / 60)}h`
   if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${minutes % 60}m`
   return `${minutes} min`
+}
+
+function maneuverIcon(maneuver?: string, travelMode?: string) {
+  const props = { 'data-testid': 'navigation-maneuver-icon', className: 'mt-0.5 size-9 shrink-0 text-ae-brand', 'aria-hidden': true as const }
+  if (travelMode === 'TRANSIT') return <TrainFront {...props} />
+  if (maneuver?.startsWith('ARRIVE')) return <MapPinCheck {...props} />
+  if (maneuver === 'UTURN_RIGHT') return <Redo2 {...props} />
+  if (maneuver === 'UTURN_LEFT') return <Undo2 {...props} />
+  if (maneuver?.includes('LEFT')) return <CornerUpLeft {...props} />
+  if (maneuver?.includes('RIGHT')) return <CornerUpRight {...props} />
+  if (maneuver === 'STRAIGHT' || maneuver === 'DEPART' || maneuver === 'MERGE') return <ArrowUp {...props} />
+  return <Navigation {...props} />
 }
 
 function calculateHeading(from: LiveLocation | null, latitude: number, longitude: number) {
@@ -87,6 +99,7 @@ export default function DashboardPage() {
   const [accessibilityMode, setAccessibilityMode] = useState<AccessibilityMode>(initialCommute?.accessibilityMode ?? 'STANDARD')
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLocating, setIsLocating] = useState(false)
+  const [isNavigationLocationPending, setIsNavigationLocationPending] = useState(false)
   const [selectedId, setSelectedId] = useState('')
   const [comparisonGroups, setComparisonGroups] = useState<RouteComparisonOutcome[]>([])
   const [isPlannerOpen, setIsPlannerOpen] = useState(Boolean(initialCommute))
@@ -96,6 +109,7 @@ export default function DashboardPage() {
   const supportsGeolocation = typeof navigator !== 'undefined' && Boolean(navigator.geolocation)
   const [isLocationPending, setIsLocationPending] = useState(supportsGeolocation)
   const [liveLocation, setLiveLocation] = useState<LiveLocation | null>(null)
+  const liveLocationRef = useRef<LiveLocation | null>(null)
   const [guidanceNow, setGuidanceNow] = useState(currentTime)
   const [locationError, setLocationError] = useState(supportsGeolocation ? '' : 'Lokasi langsung tidak didukung pada perangkat ini.')
   const [reportLocation, setReportLocation] = useState<LiveLocation | null>(null)
@@ -106,7 +120,7 @@ export default function DashboardPage() {
   const [isNavigating, setIsNavigating] = useState(false)
   const [navigationSession, setNavigationSession] = useState(0)
   const [mapLayers, setMapLayers] = useState(loadMapLayers)
-  const [navigationProgress, setNavigationProgress] = useState<{ remainingMeters: number; isOffRoute: boolean } | null>(null)
+  const [navigationProgress, setNavigationProgress] = useState<{ remainingMeters: number; isOffRoute: boolean; instruction?: string; maneuver?: string; travelMode?: string; distanceToManeuverMeters?: number } | null>(null)
   const [rerouteStatus, setRerouteStatus] = useState<RerouteStatus>('idle')
   const [showImpactConfirmation, setShowImpactConfirmation] = useState(false)
   const watchIdRef = useRef<number | null>(null)
@@ -133,16 +147,18 @@ export default function DashboardPage() {
   const routesPanelRef = useRef<HTMLElement>(null)
   const reportPanelRef = useRef<HTMLElement>(null)
   const compositeSucceeded = comparisonGroups.some((group) => group.task.id === 'BIKE_TRANSIT' && group.status === 'success')
-  const visibleComparisonGroups = compositeSucceeded ? comparisonGroups.filter((group) => group.task.id !== 'TRANSIT_FALLBACK') : comparisonGroups
-  const routes = visibleComparisonGroups.flatMap((group) => group.status === 'success' ? routeViews(group.task.id, group.task.selectedModes, group.task.request, group.comparison) : [])
+  const visibleComparisonGroups = useMemo(() => compositeSucceeded ? comparisonGroups.filter((group) => group.task.id !== 'TRANSIT_FALLBACK') : comparisonGroups, [comparisonGroups, compositeSucceeded])
+  const routes = useMemo(() => visibleComparisonGroups.flatMap((group) => group.status === 'success' ? routeViews(group.task.id, group.task.selectedModes, group.task.request, group.comparison) : []), [visibleComparisonGroups])
   const selected = routes.find((route) => route.key === selectedId) ?? routes[0]
   const selectedRoute = selected?.route
   const displayedComparison = selected?.comparison
   const selectedWeatherPoints = selectedRoute ? displayedComparison?.weatherPointsByRoute[selectedRoute.id] ?? displayedComparison?.weatherPoints : displayedComparison?.weatherPoints
-  const restStopCandidates = displayedComparison?.restStopCandidates.status === 'AVAILABLE' ? displayedComparison.restStopCandidates.candidates : []
+  const restStopCandidates = selectedRoute?.labels.includes('RECOMMENDED') && displayedComparison?.restStopCandidates.status === 'AVAILABLE' ? displayedComparison.restStopCandidates.candidates : []
   const accessiblePlaceCandidates = restStopCandidates.filter((candidate) => candidate.accessibility && Object.values(candidate.accessibility).some((value) => value === true))
   const selectedTransitStops = useTransitStops(selectedRoute)
   const guidance = origin ? routeGuidanceEligibility(origin, originSource, liveLocation, guidanceNow) : { eligible: false as const, code: 'NO_FIX' as const, message: 'Pilih titik awal rute untuk mengaktifkan navigasi.' }
+  const canRefreshLocation = originSource === 'CURRENT_LOCATION' && supportsGeolocation && (guidance.code === 'NO_FIX' || guidance.code === 'STALE_FIX' || guidance.code === 'INACCURATE_FIX')
+  const guidanceMessage = canRefreshLocation ? 'Lokasi presisi akan diperiksa saat navigasi dimulai.' : guidance.message
 
   function plannerTasks(modes = selectedModes, nextOrigin = origin, nextDestination = destination): RouteComparisonTask[] {
     if (!nextOrigin || !nextDestination) return []
@@ -156,9 +172,12 @@ export default function DashboardPage() {
   }
 
   const updateLiveLocation = useCallback((position: GeolocationPosition) => {
-    setLiveLocation((current) => ({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy, heading: Number.isFinite(position.coords.heading) ? position.coords.heading! : calculateHeading(current, position.coords.latitude, position.coords.longitude), speed: position.coords.speed, timestamp: Number.isFinite(position.timestamp) ? position.timestamp : Date.now() }))
+    const next = { latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy, heading: Number.isFinite(position.coords.heading) ? position.coords.heading! : calculateHeading(liveLocationRef.current, position.coords.latitude, position.coords.longitude), speed: position.coords.speed, timestamp: Number.isFinite(position.timestamp) ? position.timestamp : Date.now() }
+    liveLocationRef.current = next
+    setLiveLocation(next)
     setGuidanceNow(currentTime())
     setIsLocationPending(false)
+    setErrors((current) => current.origin === 'Izin lokasi ditolak.' || current.origin === 'Permintaan lokasi habis waktu. Coba mendekati jendela atau aktifkan lokasi perangkat.' || current.origin === 'Lokasi saat ini tidak tersedia.' ? { ...current, origin: undefined } : current)
     setLocationError('')
   }, [])
 
@@ -232,7 +251,7 @@ export default function DashboardPage() {
   })
   useEffect(() => {
     if (!navigator.geolocation) return
-    watchIdRef.current = navigator.geolocation.watchPosition(updateLiveLocation, () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; setLiveLocation(null); setIsLocationPending(false); setLocationError('Lokasi langsung tidak tersedia. Izinkan lokasi presisi untuk navigasi dan laporan.') }, { enableHighAccuracy: true, maximumAge: 2_000, timeout: 12_000 })
+    watchIdRef.current = navigator.geolocation.watchPosition(updateLiveLocation, (error) => { setIsLocationPending(false); if (error.code === 1) { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; setLiveLocation(null); setLocationError('Izin lokasi ditolak. Izinkan lokasi presisi untuk navigasi dan laporan.'); return } setLocationError('Sinyal lokasi sementara terganggu. Posisi terakhir tetap digunakan sambil menunggu pembaruan.') }, { enableHighAccuracy: true, maximumAge: 2_000, timeout: 12_000 })
     return () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); window.clearTimeout(hazardRetryTimerRef.current); abortComparisonRef.current(); rerouteControllerRef.current?.abort() }
   }, [updateLiveLocation])
   useEffect(() => {
@@ -301,8 +320,8 @@ export default function DashboardPage() {
     rerouteRequestRef.current += 1
   }
 
-  function startNavigation() {
-    if (!selected || !destination || !origin || !canStartNavigationFrom(origin, originSource, liveLocation, guidanceNow)) return
+  function beginNavigation(fix: LiveLocation) {
+    if (!selected || !destination || !origin || !canStartNavigationFrom(origin, originSource, fix, currentTime())) return false
     clearPendingReroute()
     navigationSessionRef.current = selected.comparison.persisted && selected.route.routeResultId ? { routeResultId: selected.route.routeResultId, destination: { ...destination } } : null
     recordedImpactRef.current = false
@@ -310,11 +329,24 @@ export default function DashboardPage() {
     consecutiveOffRouteRef.current = 0
     seenHazardIdsRef.current = ''
     setRerouteStatus('idle')
+    setIsNavigationLocationPending(false)
     setNavigationSession((session) => session + 1)
     setIsNavigating(true)
     setIsPlannerOpen(false)
     setIsRoutesOpen(false)
     setActiveMobilePanel('map')
+    return true
+  }
+
+  function startNavigation() {
+    if (!navigator.geolocation || originSource !== 'CURRENT_LOCATION' || isNavigationLocationPending) return
+    setIsNavigationLocationPending(true)
+    navigator.geolocation.getCurrentPosition((position) => {
+      const fix = { latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy, heading: Number.isFinite(position.coords.heading) ? position.coords.heading! : calculateHeading(liveLocation, position.coords.latitude, position.coords.longitude), speed: position.coords.speed, timestamp: Number.isFinite(position.timestamp) ? position.timestamp : currentTime() }
+      updateLiveLocation(position)
+      setIsNavigationLocationPending(false)
+      if (!beginNavigation(fix) && origin) setLocationError(routeGuidanceEligibility(origin, originSource, fix, currentTime()).message)
+    }, (error) => { setIsNavigationLocationPending(false); setLocationError(error.code === 1 ? 'Izin lokasi ditolak.' : 'Lokasi terbaru tidak tersedia. Coba lagi.') }, { enableHighAccuracy: true, maximumAge: 0, timeout: 12_000 })
   }
 
   function stopNavigation() {
@@ -338,8 +370,8 @@ export default function DashboardPage() {
     } catch (error) { recordedImpactRef.current = false; showToast(getApiErrorMessage(error, 'Dampak perjalanan tidak dapat dicatat.'), 'error') }
   }
 
-  function handleNavigationProgress(progress: { remainingMeters: number; isOffRoute: boolean }) {
-    setNavigationProgress({ remainingMeters: progress.remainingMeters, isOffRoute: progress.isOffRoute })
+  function handleNavigationProgress(progress: { remainingMeters: number; isOffRoute: boolean; instruction?: string; maneuver?: string; travelMode?: string; distanceToManeuverMeters?: number }) {
+    setNavigationProgress((current) => current && Math.round(current.remainingMeters) === Math.round(progress.remainingMeters) && current.isOffRoute === progress.isOffRoute && current.instruction === progress.instruction && current.maneuver === progress.maneuver && current.travelMode === progress.travelMode && Math.round(current.distanceToManeuverMeters ?? 0) === Math.round(progress.distanceToManeuverMeters ?? 0) ? current : progress)
     if (!liveLocation || selected?.request.mode === 'TRANSIT') return
     const decision = shouldTriggerOffRouteReroute({ consecutiveFixes: consecutiveOffRouteRef.current, isOffRoute: progress.isOffRoute, accuracy: liveLocation.accuracy, now: currentTime(), lastRerouteAt: lastRerouteAtRef.current })
     consecutiveOffRouteRef.current = decision.consecutiveFixes
@@ -390,6 +422,8 @@ export default function DashboardPage() {
     if (!navigator.geolocation) { setErrors((current) => ({ ...current, origin: 'Lokasi tidak didukung pada perangkat ini.' })); return }
     const request = (highAccuracy: boolean) => navigator.geolocation.getCurrentPosition((position) => { updateLiveLocation(position); applyLocation(position.coords.latitude, position.coords.longitude) }, (error) => {
       if (highAccuracy && (error.code === 2 || error.code === 3)) { request(false); return }
+      const latest = liveLocationRef.current
+      if (latest && currentTime() - latest.timestamp <= 15_000 && latest.accuracy <= 100) { applyLocation(latest.latitude, latest.longitude); return }
       setErrors((current) => ({ ...current, origin: error.code === 1 ? 'Izin lokasi ditolak.' : error.code === 3 ? 'Permintaan lokasi habis waktu. Coba mendekati jendela atau aktifkan lokasi perangkat.' : 'Lokasi saat ini tidak tersedia.' }))
       setIsLocating(false)
     }, { enableHighAccuracy: highAccuracy, maximumAge: 15_000, timeout: highAccuracy ? 20_000 : 10_000 })
@@ -428,17 +462,18 @@ export default function DashboardPage() {
   const panelStyle = { '--sheet-height': `${mobileSheet.height}%`, '--panel-x': `${plannerDrag.initialPosition.x}px`, '--panel-y': `${plannerDrag.initialPosition.y}px` } as CSSProperties
   const routesPanelStyle = { '--sheet-height': `${mobileSheet.height}%`, '--panel-x': `${routesDrag.initialPosition.x}px`, '--panel-y': `${routesDrag.initialPosition.y}px` } as CSSProperties
   const reportPanelStyle = { '--sheet-height': `${mobileSheet.height}%`, '--panel-x': `${reportDrag.initialPosition.x}px`, '--panel-y': `${reportDrag.initialPosition.y}px`, '--report-height': reportLayout.step === 1 ? '34rem' : reportLayout.hasImages ? '31rem' : '29rem' } as CSSProperties
-  const mapRoutes = routes.map((view) => ({ ...view.route, id: view.key }))
+  const mapRoutes = useMemo(() => (isNavigating && selected ? [selected] : routes).map((view) => ({ ...view.route, id: view.key })), [isNavigating, routes, selected])
+  const maneuverIndicator = maneuverIcon(navigationProgress?.maneuver, navigationProgress?.travelMode)
 
   return <main id="main-content" className="relative h-full overflow-hidden bg-white text-ae-ink" tabIndex={-1}>
     <section className="absolute inset-0" aria-label="Route map"><RoutePreviewMap origin={origin} destination={destination} routes={mapRoutes} selectedId={selected?.key} selectedRouteResultId={selectedRoute?.routeResultId} transitStops={selectedTransitStops} liveLocation={liveLocation} followLiveLocation={isNavigating} navigationSession={navigationSession} reports={reports} restStopCandidates={restStopCandidates} navigationRoute={isNavigating ? selectedRoute : null} showWeather={mapLayers.weather} weatherPoints={selectedWeatherPoints} showReports={mapLayers.reports} showRestStops={mapLayers.restStops} showAccessiblePlaces={mapLayers.accessiblePlaces} onNavigationProgress={handleNavigationProgress} onOriginChange={(place) => { setOrigin(place); setOriginSource('OTHER'); resetComparison() }} onDestinationChange={(place) => { setDestination(place); resetComparison() }} onBoundsChange={handleMapBoundsChange} selectedReport={selectedReport} onReportSelect={(report) => { setSelectedReport(report); setReportLocation(null) }} onReportClose={() => setSelectedReport(null)} reportPopup={(report, onClose) => <RoadReportDetailPanel variant="anchored" report={report} onClose={onClose} onUpdate={updateSelectedReport} />} onRouteSelect={handleRouteSelect} onMapReady={setIsMapReady} /></section>
     {isPlannerOpen && <aside id="planner-panel" ref={plannerPanelRef} tabIndex={-1} data-draggable-panel className={`absolute inset-x-0 bottom-0 z-30 h-[var(--sheet-height)] flex-col overflow-hidden rounded-t-[1.75rem] border border-ae-line bg-white/97 shadow-[0_24px_70px_rgba(20,41,34,.2)] backdrop-blur-xl lg:inset-auto lg:left-[var(--panel-x)] lg:top-[var(--panel-y)] lg:h-auto lg:max-h-[calc(100dvh-var(--panel-y)-1.25rem)] lg:w-[30rem] lg:rounded-[1.75rem] ${plannerVisibleOnMobile ? 'flex' : 'hidden lg:flex'}`} style={panelStyle} aria-label="Route planner"><PlannerPanel origin={origin} destination={destination} selectedModes={selectedModes} preference={preference} sensitiveUser={sensitiveUser} transitPreference={transitPreference} accessibilityMode={accessibilityMode} errors={errors} isLocating={isLocating} isPending={comparison.isPending} onOriginChange={(place) => { setOrigin(place); setOriginSource('OTHER'); setErrors((current) => ({ ...current, origin: undefined })); resetComparison() }} onDestinationChange={(place) => { setDestination(place); setErrors((current) => ({ ...current, destination: undefined })); resetComparison() }} onSelectedModesChange={(value) => { setSelectedModes(value); resetComparison() }} onPreferenceChange={(value) => { setPreference(value); resetComparison() }} onSensitiveUserChange={(value) => { setSensitiveUser(value); resetComparison() }} onTransitPreferenceChange={(value) => { setTransitPreference(value); resetComparison() }} onAccessibilityModeChange={(value) => { setAccessibilityMode(value); resetComparison() }} onCurrentLocation={handleCurrentLocation} onSwap={() => { setOrigin(destination); setOriginSource('OTHER'); setDestination(origin); setErrors({}); resetComparison() }} onSubmit={handleSubmit} onClose={() => { setIsPlannerOpen(false); if (activeMobilePanel === 'planner') setActiveMobilePanel(isRoutesOpen ? 'routes' : 'map') }} onDesktopDragStart={plannerDrag.handlePointerDown} onDesktopDragMove={plannerDrag.handlePointerMove} onDesktopDragEnd={plannerDrag.handlePointerUp} onDesktopDragKeyDown={plannerDrag.handleKeyDown} mobileHandle={{ height: mobileSheet.height, onClick: mobileSheet.handleClick, onPointerDown: mobileSheet.handlePointerDown, onPointerMove: mobileSheet.handlePointerMove, onPointerUp: mobileSheet.handlePointerUp, onKeyDown: mobileSheet.handleKeyDown }} /></aside>}
-    {isRoutesOpen && <aside id="routes-panel" ref={routesPanelRef} tabIndex={-1} data-draggable-panel className={`absolute inset-x-0 bottom-0 z-30 h-[var(--sheet-height)] flex-col overflow-hidden rounded-t-[1.75rem] border border-ae-line bg-white/97 shadow-[0_24px_70px_rgba(20,41,34,.2)] backdrop-blur-xl lg:inset-auto lg:left-[var(--panel-x)] lg:top-[var(--panel-y)] lg:h-[calc(100dvh-var(--panel-y)-1.25rem)] lg:w-[27rem] lg:rounded-[1.75rem] ${routesVisibleOnMobile ? 'flex' : 'hidden lg:flex'}`} style={routesPanelStyle} aria-label="Hasil rute"><button className="flex min-h-11 w-full shrink-0 touch-none cursor-grab items-center justify-center active:cursor-grabbing lg:hidden" type="button" aria-label="Ubah ukuran panel rute" aria-valuetext={`${Math.round(mobileSheet.height)} persen tinggi`} onClick={mobileSheet.handleClick} onPointerDown={mobileSheet.handlePointerDown} onPointerMove={mobileSheet.handlePointerMove} onPointerUp={(event) => mobileSheet.handlePointerUp(event, () => setIsRoutesOpen(false))} onPointerCancel={(event) => mobileSheet.handlePointerUp(event, () => setIsRoutesOpen(false))} onKeyDown={mobileSheet.handleKeyDown}><span className="h-1.5 w-12 rounded-full bg-ae-line" aria-hidden="true" /></button><div className="min-h-0 flex-1 lg:h-full"><RouteResultsPanel groups={visibleComparisonGroups} selected={selected} isPending={comparison.isPending} onSelect={handleRouteSelect} onRetry={retryComparison} canStartNavigation={guidance.eligible} guidanceMessage={guidance.message} onStartNavigation={startNavigation} onClose={() => { setIsRoutesOpen(false); if (activeMobilePanel === 'routes') setActiveMobilePanel(isPlannerOpen ? 'planner' : 'map') }} onDesktopDragStart={routesDrag.handlePointerDown} onDesktopDragMove={routesDrag.handlePointerMove} onDesktopDragEnd={routesDrag.handlePointerUp} onDesktopDragKeyDown={routesDrag.handleKeyDown} /></div></aside>}
+    {isRoutesOpen && <aside id="routes-panel" ref={routesPanelRef} tabIndex={-1} data-draggable-panel className={`absolute inset-x-0 bottom-0 z-30 h-[var(--sheet-height)] flex-col overflow-hidden rounded-t-[1.75rem] border border-ae-line bg-white/97 shadow-[0_24px_70px_rgba(20,41,34,.2)] backdrop-blur-xl lg:inset-auto lg:left-[var(--panel-x)] lg:top-[var(--panel-y)] lg:h-[calc(100dvh-var(--panel-y)-1.25rem)] lg:w-[27rem] lg:rounded-[1.75rem] ${routesVisibleOnMobile ? 'flex' : 'hidden lg:flex'}`} style={routesPanelStyle} aria-label="Hasil rute"><button className="flex min-h-11 w-full shrink-0 touch-none cursor-grab items-center justify-center active:cursor-grabbing lg:hidden" type="button" aria-label="Ubah ukuran panel rute" aria-valuetext={`${Math.round(mobileSheet.height)} persen tinggi`} onClick={mobileSheet.handleClick} onPointerDown={mobileSheet.handlePointerDown} onPointerMove={mobileSheet.handlePointerMove} onPointerUp={(event) => mobileSheet.handlePointerUp(event, () => setIsRoutesOpen(false))} onPointerCancel={(event) => mobileSheet.handlePointerUp(event, () => setIsRoutesOpen(false))} onKeyDown={mobileSheet.handleKeyDown}><span className="h-1.5 w-12 rounded-full bg-ae-line" aria-hidden="true" /></button><div className="min-h-0 flex-1 lg:h-full"><RouteResultsPanel groups={visibleComparisonGroups} selected={selected} isPending={comparison.isPending} onSelect={handleRouteSelect} onRetry={retryComparison} canStartNavigation={guidance.eligible} canRefreshLocation={canRefreshLocation} isStartPending={isNavigationLocationPending} guidanceMessage={guidanceMessage} onStartNavigation={isNavigating ? undefined : startNavigation} onClose={() => { setIsRoutesOpen(false); if (activeMobilePanel === 'routes') setActiveMobilePanel(isPlannerOpen ? 'planner' : 'map') }} onDesktopDragStart={routesDrag.handlePointerDown} onDesktopDragMove={routesDrag.handlePointerMove} onDesktopDragEnd={routesDrag.handlePointerUp} onDesktopDragKeyDown={routesDrag.handleKeyDown} /></div></aside>}
     {reportLocation && <aside id="report-panel" ref={reportPanelRef} tabIndex={-1} data-draggable-panel className={`absolute inset-x-0 bottom-0 z-30 h-[var(--sheet-height)] overflow-hidden rounded-t-[1.75rem] border border-ae-line bg-white/97 shadow-[0_24px_70px_rgba(20,41,34,.2)] backdrop-blur-xl lg:inset-auto lg:left-[var(--panel-x)] lg:top-[var(--panel-y)] lg:h-[var(--report-height)] lg:w-[35rem] lg:rounded-[1.75rem] ${reportVisibleOnMobile ? 'block' : 'hidden lg:block'}`} style={reportPanelStyle} aria-label="Road report"><RoadReportSheet location={reportLocation} onClose={closeReport} onCreated={(report) => { setReports((current) => [report, ...current]); closeReport() }} onLayoutChange={setReportLayout} onDesktopDragStart={reportDrag.handlePointerDown} onDesktopDragMove={reportDrag.handlePointerMove} onDesktopDragEnd={reportDrag.handlePointerUp} onDesktopDragKeyDown={reportDrag.handleKeyDown} mobileHandle={{ height: mobileSheet.height, onClick: mobileSheet.handleClick, onPointerDown: mobileSheet.handlePointerDown, onPointerMove: mobileSheet.handlePointerMove, onPointerUp: mobileSheet.handlePointerUp, onKeyDown: mobileSheet.handleKeyDown }} /></aside>}
-    {isNavigating && destination && <div className="absolute right-3 left-3 z-50 mx-auto max-w-md rounded-2xl border border-ae-brand/20 bg-white/97 p-3 text-ae-ink shadow-[0_18px_45px_rgba(20,41,34,.18)] backdrop-blur-xl sm:p-4" style={{ top: '9rem' }}><div className="flex items-start justify-between gap-3"><div className="min-w-0"><span className="text-[11px] font-black tracking-[.12em] text-ae-brand uppercase sm:text-xs">{rerouteStatus === 'checking' ? 'Memeriksa rute' : rerouteStatus === 'applied' ? 'Rute baru diterapkan' : rerouteStatus === 'failed' ? 'Pemeriksaan rute gagal' : navigationProgress?.isOffRoute ? 'Keluar dari rute' : 'Navigasi rute'}</span><strong className="mt-1 block truncate text-base font-black sm:text-lg">{destination.label}</strong>{navigationProgress && <span className="mt-1 block text-sm font-bold text-ae-muted">Sisa {formatDistance(navigationProgress.remainingMeters)}</span>}<span className="mt-1 block text-[11px] font-bold text-ae-muted">Rute diperbarui otomatis saat diperlukan, bukan panduan belokan demi belokan.</span></div>{rerouteStatus === 'failed' && <button className="inline-flex min-h-11 items-center gap-1 rounded-xl bg-ae-soft px-3 text-xs font-black text-ae-brand hover:bg-ae-line" type="button" onClick={() => void runDynamicReroute()}><RefreshCw className="size-4" aria-hidden="true" />Coba lagi</button>}<button className="grid size-11 shrink-0 place-items-center rounded-xl bg-ae-soft text-ae-ink hover:bg-ae-line" type="button" aria-label="Hentikan navigasi" onClick={stopNavigation}><X className="size-5" aria-hidden="true" /></button></div></div>}
+    {isNavigating && destination && <div className="absolute right-3 left-3 z-50 mx-auto max-w-md rounded-2xl border border-ae-brand/20 bg-white/97 p-3 text-ae-ink shadow-[0_18px_45px_rgba(20,41,34,.18)] backdrop-blur-xl sm:p-4" style={{ top: '9rem' }}><div className="flex items-start justify-between gap-3"><div className="min-w-0"><span className="text-[11px] font-black tracking-[.12em] text-ae-brand uppercase sm:text-xs">{rerouteStatus === 'checking' ? 'Memeriksa rute' : rerouteStatus === 'applied' ? 'Rute baru diterapkan' : rerouteStatus === 'failed' ? 'Pemeriksaan rute gagal' : navigationProgress?.isOffRoute ? 'Keluar dari rute' : 'Navigasi rute'}</span><strong className="mt-1 block truncate text-base font-black sm:text-lg">{destination.label}</strong>{navigationProgress?.instruction ? <div className="mt-2 flex items-start gap-3">{maneuverIndicator}<div className="min-w-0"><strong className="block text-lg font-black leading-tight">{navigationProgress.instruction}</strong>{navigationProgress.distanceToManeuverMeters !== undefined && <span className="mt-1 block text-sm font-bold text-ae-brand">Dalam {formatDistance(navigationProgress.distanceToManeuverMeters)}</span>}</div></div> : <span className="mt-2 block text-sm font-bold text-ae-muted">Ikuti rute menuju tujuan.</span>}{navigationProgress && <span className="mt-1 block text-xs font-bold text-ae-muted">Sisa perjalanan {formatDistance(navigationProgress.remainingMeters)}</span>}</div>{rerouteStatus === 'failed' && <button className="inline-flex min-h-11 items-center gap-1 rounded-xl bg-ae-soft px-3 text-xs font-black text-ae-brand hover:bg-ae-line" type="button" onClick={() => void runDynamicReroute()}><RefreshCw className="size-4" aria-hidden="true" />Coba lagi</button>}<button className="grid size-11 shrink-0 place-items-center rounded-xl text-ae-ink hover:text-ae-brand" type="button" aria-label="Hentikan navigasi" onClick={stopNavigation}><X className="size-5" aria-hidden="true" /></button></div></div>}
     <div className="absolute inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-10 grid grid-cols-4 gap-1 rounded-xl border border-ae-line bg-white/96 p-1 shadow-[0_12px_30px_rgba(20,41,34,.2)] backdrop-blur-xl lg:inset-x-auto lg:top-24 lg:right-5 lg:bottom-auto lg:w-32 lg:grid-cols-1 lg:gap-2 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none"><button className="inline-flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-xs font-black lg:min-h-11 lg:flex-row lg:justify-start lg:gap-2 lg:border lg:border-ae-line lg:bg-white/96 lg:px-3 lg:text-sm lg:shadow-lg disabled:opacity-50" type="button" ref={reportTriggerRef} aria-expanded={Boolean(reportLocation)} aria-controls="report-panel" onClick={openRoadReport} disabled={!isMapReady || isLocationPending}><img className="size-7" src={colorReportIcon} alt="" />Lapor</button><button className="inline-flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-xs font-black lg:min-h-11 lg:flex-row lg:justify-start lg:gap-2 lg:border lg:border-ae-line lg:bg-white/96 lg:px-3 lg:text-sm lg:shadow-lg" type="button" ref={plannerTriggerRef} aria-expanded={isPlannerOpen} aria-controls="planner-panel" disabled={!isMapReady} onClick={() => { setIsPlannerOpen(true); setActiveMobilePanel('planner'); mobileSheet.setHeight(55) }}><img className="size-7" src={colorSearchIcon} alt="" />Rencana</button><button className="inline-flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-xs font-black lg:min-h-11 lg:flex-row lg:justify-start lg:gap-2 lg:border lg:border-ae-line lg:bg-white/96 lg:px-3 lg:text-sm lg:shadow-lg disabled:opacity-50" type="button" ref={routesTriggerRef} aria-expanded={isRoutesOpen} aria-controls="routes-panel" onClick={() => { setIsRoutesOpen(true); setActiveMobilePanel('routes'); mobileSheet.setHeight(55) }}><img className="size-7" src={colorSignpostIcon} alt="" />Rute</button><MapLayerControl layers={mapLayers} weatherUnavailable={!displayedComparison?.weatherPoints.some((point) => point.conditions.status === 'available')} accessiblePlacesUnavailable={!displayedComparison || accessiblePlaceCandidates.length === 0} restStopsUnavailable={!displayedComparison || displayedComparison.restStopCandidates.status === 'UNAVAILABLE' || restStopCandidates.length === 0} disabled={!isMapReady} onChange={(layers) => { setMapLayers(layers); saveMapLayers(layers) }} /></div>
     {locationError && <div className="absolute top-[10rem] right-20 z-40 max-w-64 rounded-xl bg-white p-3 text-xs font-bold text-ae-fastest shadow-lg lg:top-24 lg:right-36">{locationError}</div>}
-    {selectedRoute && !isRoutesOpen && <div className="pointer-events-none absolute right-4 bottom-20 left-4 z-10 mx-auto hidden max-w-xl grid-cols-3 divide-x divide-ae-line rounded-2xl border border-ae-line bg-white/95 p-3 text-center shadow-[0_14px_40px_rgba(20,41,34,.16)] backdrop-blur-xl lg:grid"><span><img className="mx-auto size-6" src={colorTimeIcon} alt="" /><small className="mt-1 block text-[10px] font-black uppercase">Waktu</small><strong>{formatDuration(selectedRoute.durationSeconds)}</strong></span><span><img className="mx-auto size-6" src={colorExposureIcon} alt="" /><small className="mt-1 block text-[10px] font-black uppercase">Indeks paparan</small><strong>{formatCompactNumber(selectedRoute.estimatedExposureIndex)}</strong></span><span><img className="mx-auto size-6" src={colorDistanceIcon} alt="" /><small className="mt-1 block text-[10px] font-black uppercase">Jarak</small><strong>{(selectedRoute.distanceMeters / 1000).toFixed(1)} km</strong></span></div>}
+    {selectedRoute && !isRoutesOpen && <div className="pointer-events-none absolute right-4 bottom-20 left-4 z-10 mx-auto hidden max-w-xl grid-cols-3 divide-x divide-ae-line rounded-2xl border border-ae-line bg-white/95 p-3 text-center shadow-[0_14px_40px_rgba(20,41,34,.16)] backdrop-blur-xl lg:grid"><span><img className="mx-auto size-6" src={colorTimeIcon} alt="" /><small className="mt-1 block text-[10px] font-black uppercase">Waktu</small><strong>{formatDuration(selectedRoute.durationSeconds)}</strong></span><span><img className="mx-auto size-6" src={colorExposureIcon} alt="" /><small className="mt-1 block text-[10px] font-black uppercase">Indeks paparan</small><strong>{selectedRoute.estimatedExposureIndex === null ? 'Tidak tersedia' : formatCompactNumber(selectedRoute.estimatedExposureIndex)}</strong></span><span><img className="mx-auto size-6" src={colorDistanceIcon} alt="" /><small className="mt-1 block text-[10px] font-black uppercase">Jarak</small><strong>{(selectedRoute.distanceMeters / 1000).toFixed(1)} km</strong></span></div>}
     <div className="sr-only" role="status" aria-live="polite">{rerouteStatus === 'checking' ? 'Memeriksa rute.' : rerouteStatus === 'applied' ? 'Rute baru diterapkan.' : rerouteStatus === 'failed' ? 'Pemeriksaan rute gagal.' : navigationProgress?.isOffRoute ? 'Anda keluar dari rute.' : ''}</div>
     <ConfirmationDialog isOpen={showImpactConfirmation} title="Selesaikan perjalanan ini?" description="Catat estimasi dampak menggunakan hasil rute tersimpan dan metrik dari server. Satu catatan diizinkan untuk sesi navigasi ini." confirmLabel="Catat perjalanan" isPending={tripImpact.isPending} onCancel={() => setShowImpactConfirmation(false)} onConfirm={() => void recordImpact()} />
   </main>
