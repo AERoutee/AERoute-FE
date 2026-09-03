@@ -1,3 +1,5 @@
 export { useDraggablePanel, useMobileSheet } from './common'
 export { useMutationRemoveProfileAvatar, useMutationUploadProfileAvatar } from './profile'
 export { useMutationCreateRouteComparison } from './route-comparison'
+export * from './insights'
+export * from './road-report'

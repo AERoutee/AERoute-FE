@@ -1,0 +1,22 @@
+{
+  "name": "AERoute",
+  "short_name": "AERoute",
+  "description": "Compare walking and cycling routes by travel time and estimated PM2.5 exposure.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf5",
+  "theme_color": "#fbfaf5",
+  "icons": [
+    {
+      "src": "/icons/aeroute-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/aeroute-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

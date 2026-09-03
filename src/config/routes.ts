@@ -18,6 +18,7 @@ export const appRoutes: AppRoute[] = [
   { path: '/vision-mission', component: lazy(() => import('@/pages/vision-mission').then((module) => ({ default: module.VisionMissionPage }))), layout: 'public', title: 'Vision & Mission | AERoute' },
   { path: '/faq', component: lazy(() => import('@/pages/faq').then((module) => ({ default: module.FaqPage }))), layout: 'public', title: 'FAQ | AERoute' },
   { path: '/dashboard', component: lazy(() => import('@/pages/dashboard')), layout: 'dashboard', access: 'authenticated', title: 'Route Planner | AERoute' },
+  { path: '/insights', component: lazy(() => import('@/pages/insights').then((module) => ({ default: module.InsightsPage }))), layout: 'public', access: 'authenticated', title: 'Insights | AERoute' },
   { path: '/profile', component: lazy(() => import('@/pages/profile').then((module) => ({ default: module.ProfilePage }))), layout: 'public', access: 'authenticated', title: 'Profile & Security | AERoute' },
   { path: '/login', component: lazy(() => import('@/pages/login')), layout: 'standalone', access: 'guest', title: 'Sign In | AERoute' },
   { path: '/register', component: lazy(() => import('@/pages/register')), layout: 'standalone', access: 'guest', title: 'Create Account | AERoute' },

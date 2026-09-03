@@ -1,1 +1,1 @@
-export { compareRoutes } from './route-comparison-queries'
+export { compareRoutes, getTransitStopDetails } from './route-comparison-queries'

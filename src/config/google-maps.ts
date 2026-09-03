@@ -19,7 +19,8 @@ export async function loadGooglePlaces() {
 
 export async function loadGoogleMaps() {
   if (!configure()) return null
-  return importLibrary('maps')
+  const [maps] = await Promise.all([importLibrary('maps'), importLibrary('streetView')])
+  return maps
 }
 
 export function hasGoogleMapsKey() {

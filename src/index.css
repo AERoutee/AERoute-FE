@@ -36,14 +36,37 @@
 }
 
 .gm-style .gm-style-iw-c {
-  max-width: 310px !important;
-  overflow: visible !important;
+  max-width: min(34rem, calc(100vw - 2rem)) !important;
+  max-height: min(75dvh, 36rem) !important;
+  overflow: auto !important;
   border-radius: 12px !important;
 }
 
 .gm-style .gm-style-iw-d {
-  overflow: hidden !important;
-  max-height: none !important;
+  max-height: min(75dvh, 36rem) !important;
+  overflow: auto !important;
+}
+
+.gm-style .aeroute-place-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(10rem, .85fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.gm-style .aeroute-place-primary,
+.gm-style .aeroute-place-facilities {
+  min-width: 0;
+}
+
+.gm-style .aeroute-place-facilities dl {
+  grid-template-columns: 1fr !important;
+}
+
+@media (max-width: 30rem) {
+  .gm-style .aeroute-place-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .gm-style .aeroute-report-info img {

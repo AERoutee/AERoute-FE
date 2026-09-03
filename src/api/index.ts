@@ -1,3 +1,4 @@
 export * from './recovery'
 export * from './road-report'
-export { compareRoutes } from './route-comparison'
+export * from './insights'
+export { compareRoutes, getTransitStopDetails } from './route-comparison'

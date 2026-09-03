@@ -1,4 +1,5 @@
 export type { ApiErrorResponse, ApiResponse } from './api'
+export type { SavedCommute, SavedCommuteInput, TripImpact, TripImpactSummary } from './insights'
 export type { Place } from './place'
-export type { PlannerRequest, RouteComparison, RouteOption, RoutePreference, TravelMode, WeatherAdvisory, WeatherConditions } from './route'
-export type { RoadReport, RoadReportBounds, RoadReportCategory } from './road-report'
+export type { AccessibilityMode, AccessPlan, DepartureComparison, DirectTravelMode, HazardPolicy, HeatUvSummary, LiveLocation, ParkingOptions, PlaceAccessibility, PlacePhoto, PlannerRequest, RestStopCandidate, RestStopResult, RouteComparison, RouteComparisonOutcome, RouteComparisonTask, RouteOption, RoutePreference, RouteTaskId, RouteView, TransitMode, TransitPreference, TransitSegment, TransitStop, TransitStopDetailsResult, TransitSummary, TravelMode, WeatherAdvisory, WeatherConditions } from './route'
+export type { RoadReport, RoadReportBounds, RoadReportCategory, RoadReportEvidence, RoadReportVerdict } from './road-report'

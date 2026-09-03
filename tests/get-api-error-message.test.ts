@@ -14,9 +14,14 @@ describe('getApiErrorMessage', () => {
     expect(getApiErrorMessage(error, 'Fallback')).toBe('Invalid route')
   })
 
-  it('uses fallback when an Axios error has no structured message', () => {
+  it.each([
+    { response: undefined },
+    { response: { data: null } },
+    { response: { data: {} } },
+    { response: { data: { error: null } } },
+  ])('uses fallback when an Axios error has malformed data', (error) => {
     isAxiosError.mockReturnValue(true)
-    expect(getApiErrorMessage({ response: undefined }, 'Fallback')).toBe('Fallback')
+    expect(getApiErrorMessage(error, 'Fallback')).toBe('Fallback')
   })
 
   it('returns a regular Error message', () => {

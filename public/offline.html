@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fbfaf5" />
+    <title>AERoute offline</title>
+    <style>
+      :root { color: #142922; background: #fbfaf5; font-family: system-ui, sans-serif; }
+      body { min-height: 100vh; min-height: 100dvh; margin: 0; display: grid; place-items: center; }
+      main { box-sizing: border-box; width: min(100%, 38rem); padding: 2rem; }
+      h1 { margin: 0 0 .5rem; font-size: 2rem; }
+      p { color: #53645e; line-height: 1.5; }
+      dl { display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: .75rem 1rem; margin: 2rem 0; padding: 1.25rem; border: 1px solid #d8dfdb; border-radius: 1rem; background: white; }
+      dt { font-weight: 700; }
+      dd { margin: 0; overflow-wrap: anywhere; }
+      a { display: inline-block; padding: .75rem 1rem; border-radius: .75rem; color: white; background: #087f5b; font-weight: 700; text-decoration: none; }
+      [hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>You’re offline</h1>
+      <p>Reconnect to compare routes. Your last selected route summary is available below.</p>
+      <dl id="summary" hidden>
+        <dt>Mode</dt><dd id="mode"></dd>
+        <dt>Duration</dt><dd id="duration"></dd>
+        <dt>Distance</dt><dd id="distance"></dd>
+        <dt>Average PM2.5</dt><dd id="pm25"></dd>
+        <dt>Saved</dt><dd id="saved"></dd>
+      </dl>
+      <p id="empty">No saved route summary is available.</p>
+      <a href="/">Try again</a>
+    </main>
+    <script>
+      (() => {
+        try {
+          const summary = JSON.parse(localStorage.getItem('aeroute:last-route-summary:v2'))
+          if (summary?.version !== 2 || !summary.route || typeof summary.expiresAt !== 'string' || Date.parse(summary.expiresAt) <= Date.now()) { localStorage.removeItem('aeroute:last-route-summary:v2'); return }
+          const set = (id, value) => { document.getElementById(id).textContent = value }
+          const minutes = Math.max(1, Math.round(Number(summary.route.durationSeconds) / 60))
+          const kilometers = Number(summary.route.distanceMeters) / 1000
+          const pm25 = Number(summary.route.averagePm25)
+          set('mode', typeof summary.modeLabel === 'string' ? summary.modeLabel : 'Unavailable')
+          set('duration', Number.isFinite(minutes) ? `${minutes} min` : 'Unavailable')
+          set('distance', Number.isFinite(kilometers) ? `${kilometers.toFixed(1)} km` : 'Unavailable')
+          set('pm25', Number.isFinite(pm25) ? `${pm25.toFixed(1)} µg/m³` : 'Unavailable')
+          set('saved', typeof summary.savedAt === 'string' ? new Date(summary.savedAt).toLocaleString() : 'Unavailable')
+          document.getElementById('summary').hidden = false
+          document.getElementById('empty').hidden = true
+        } catch {}
+      })()
+    </script>
+  </body>
+</html>

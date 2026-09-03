@@ -72,10 +72,7 @@ function CountUp({ value, className }: { value: number; className: string }) {
   const [displayValue, setDisplayValue] = useState(shouldReduceMotion ? value : 0)
 
   useEffect(() => {
-    if (!isInView || shouldReduceMotion) {
-      if (shouldReduceMotion) setDisplayValue(value)
-      return
-    }
+    if (!isInView || shouldReduceMotion) return
 
     const startedAt = performance.now()
     let frame = 0
@@ -189,7 +186,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      <section className="px-5 pb-20 sm:px-8 lg:px-12 lg:pb-28"><div className="mx-auto flex max-w-[90rem] flex-col items-start justify-between gap-8 rounded-xl bg-ae-ink p-8 text-white sm:p-12 lg:flex-row lg:items-center"><h2 className="m-0 max-w-3xl text-4xl leading-[.98] font-black tracking-[-.05em] sm:text-5xl">Bantu membentuk langkah selanjutnya.</h2><Link className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-white px-7 py-4 text-base font-black text-ae-ink no-underline hover:bg-ae-soft" to="/contact">Hubungi kami <ArrowRight className="size-5" aria-hidden="true" /></Link></div></section>
+      <section className="px-5 pb-10 sm:px-8 lg:px-12"><div className="mx-auto flex max-w-[90rem] flex-col items-start justify-between gap-8 rounded-xl bg-ae-ink p-8 text-white sm:p-12 lg:flex-row lg:items-center"><h2 className="m-0 max-w-3xl text-4xl leading-[.98] font-black tracking-[-.05em] sm:text-5xl">Bantu membentuk langkah selanjutnya.</h2><Link className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-white px-7 py-4 text-base font-black text-ae-ink no-underline hover:bg-ae-soft" to="/contact">Hubungi kami <ArrowRight className="size-5" aria-hidden="true" /></Link></div></section>
     </main>
   )
 }

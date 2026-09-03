@@ -2,7 +2,7 @@ import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
 
 type Position = { x: number; y: number }
 
-export function useDraggablePanel(initialPosition: Position, panelWidth: number) {
+export function useDraggablePanel(initialPosition: Position) {
   const position = useRef(initialPosition)
   const panel = useRef<HTMLElement | null>(null)
   const drag = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null)
@@ -14,12 +14,14 @@ export function useDraggablePanel(initialPosition: Position, panelWidth: number)
   }
 
   function clampPosition(nextPosition: Position) {
-    const maxX = Math.max(20, window.innerWidth - panelWidth - 20)
-    const maxY = Math.max(96, window.innerHeight - 430)
+    const rect = panel.current?.getBoundingClientRect()
+    const maxX = Math.max(20, window.innerWidth - (rect?.width ?? 0) - 20)
+    const maxY = Math.max(96, window.innerHeight - (rect?.height ?? 0) - 20)
     return { x: Math.min(maxX, Math.max(20, nextPosition.x)), y: Math.min(maxY, Math.max(96, nextPosition.y)) }
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (!event.isPrimary || event.button !== 0) return
     panel.current = event.currentTarget.closest<HTMLElement>('[data-draggable-panel]')
     if (!panel.current) return
     const rect = panel.current.getBoundingClientRect()
@@ -35,7 +37,7 @@ export function useDraggablePanel(initialPosition: Position, panelWidth: number)
   function handlePointerUp(event: ReactPointerEvent<HTMLButtonElement>) {
     if (!drag.current || drag.current.pointerId !== event.pointerId) return
     drag.current = null
-    event.currentTarget.releasePointerCapture(event.pointerId)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
