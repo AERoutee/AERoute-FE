@@ -377,9 +377,22 @@ export default function DashboardPage() {
   }
 
   function handleCurrentLocation() {
+    const applyLocation = (latitude: number, longitude: number) => {
+      setOrigin({ id: `current-${latitude}-${longitude}`, label: 'Current location', detail: 'Your device location', latitude, longitude })
+      setOriginSource('CURRENT_LOCATION')
+      setErrors((current) => ({ ...current, origin: undefined }))
+      setIsLocating(false)
+      resetComparison()
+    }
+    if (liveLocation && currentTime() - liveLocation.timestamp <= 15_000 && liveLocation.accuracy <= 100) { applyLocation(liveLocation.latitude, liveLocation.longitude); return }
     if (!navigator.geolocation) { setErrors((current) => ({ ...current, origin: 'Location is not supported on this device.' })); return }
+    const request = (highAccuracy: boolean) => navigator.geolocation.getCurrentPosition((position) => { updateLiveLocation(position); applyLocation(position.coords.latitude, position.coords.longitude) }, (error) => {
+      if (highAccuracy && (error.code === 2 || error.code === 3)) { request(false); return }
+      setErrors((current) => ({ ...current, origin: error.code === 1 ? 'Location permission was denied.' : error.code === 3 ? 'Location request timed out. Try moving near a window or enabling device location.' : 'Current location is unavailable.' }))
+      setIsLocating(false)
+    }, { enableHighAccuracy: highAccuracy, maximumAge: 15_000, timeout: highAccuracy ? 20_000 : 10_000 })
     setIsLocating(true)
-    navigator.geolocation.getCurrentPosition((position) => { updateLiveLocation(position); setOrigin({ id: `current-${position.coords.latitude}-${position.coords.longitude}`, label: 'Current location', detail: 'Your device location', latitude: position.coords.latitude, longitude: position.coords.longitude }); setOriginSource('CURRENT_LOCATION'); setErrors((current) => ({ ...current, origin: undefined })); setIsLocating(false); resetComparison() }, (error) => { setErrors((current) => ({ ...current, origin: error.code === error.PERMISSION_DENIED ? 'Location permission was denied.' : error.code === error.TIMEOUT ? 'Location request timed out.' : 'Current location is unavailable.' })); setIsLocating(false) }, { enableHighAccuracy: true, timeout: 10_000 })
+    request(true)
   }
 
   function resetComparison() {

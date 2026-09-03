@@ -31,7 +31,7 @@ jest.mock('@/hooks', () => ({
 }))
 jest.mock('@/pages/dashboard/components', () => ({
   MapLayerControl: ({ layers, onChange }: { layers: { weather: boolean; reports: boolean; accessiblePlaces: boolean; restStops: boolean }; onChange: (layers: { weather: boolean; reports: boolean; accessiblePlaces: boolean; restStops: boolean }) => void }) => <><output aria-label="layer settings">{JSON.stringify(layers)}</output><button type="button" onClick={() => onChange({ ...layers, weather: !layers.weather })}>Toggle weather</button></>,
-  PlannerPanel: ({ onOriginChange, onDestinationChange, onSelectedModesChange, onCurrentLocation, onSubmit }: { onOriginChange: (place: object) => void; onDestinationChange: (place: object) => void; onSelectedModesChange: (modes: string[]) => void; onCurrentLocation: () => void; onSubmit: (event: { preventDefault: () => void }) => void }) => <><button type="button" onClick={() => { onOriginChange({ id: 'a', label: 'A', detail: '', latitude: 1, longitude: 2 }); onDestinationChange({ id: 'b', label: 'B', detail: '', latitude: 3, longitude: 4 }); onSelectedModesChange(['WALK', 'BICYCLE']) }}>Set hybrid</button><button type="button" onClick={() => { onOriginChange({ id: 'a', label: 'A', detail: '', latitude: 1, longitude: 2 }); onDestinationChange({ id: 'b', label: 'B', detail: '', latitude: 3, longitude: 4 }); onSelectedModesChange(['BICYCLE', 'TRAIN']) }}>Set composite</button><button type="button" onClick={onCurrentLocation}>Use test current location</button><button type="button" onClick={() => onDestinationChange({ id: 'b', label: 'B', detail: '', latitude: 3, longitude: 4 })}>Set destination</button><button type="button" onClick={() => onSubmit({ preventDefault: jest.fn() })}>Submit hybrid</button></>,
+  PlannerPanel: ({ errors, isLocating, onOriginChange, onDestinationChange, onSelectedModesChange, onCurrentLocation, onSubmit }: { errors: { origin?: string }; isLocating: boolean; onOriginChange: (place: object) => void; onDestinationChange: (place: object) => void; onSelectedModesChange: (modes: string[]) => void; onCurrentLocation: () => void; onSubmit: (event: { preventDefault: () => void }) => void }) => <><output aria-label="origin error">{errors.origin ?? ''}</output><output aria-label="location pending">{String(isLocating)}</output><button type="button" onClick={() => { onOriginChange({ id: 'a', label: 'A', detail: '', latitude: 1, longitude: 2 }); onDestinationChange({ id: 'b', label: 'B', detail: '', latitude: 3, longitude: 4 }); onSelectedModesChange(['WALK', 'BICYCLE']) }}>Set hybrid</button><button type="button" onClick={() => { onOriginChange({ id: 'a', label: 'A', detail: '', latitude: 1, longitude: 2 }); onDestinationChange({ id: 'b', label: 'B', detail: '', latitude: 3, longitude: 4 }); onSelectedModesChange(['BICYCLE', 'TRAIN']) }}>Set composite</button><button type="button" onClick={onCurrentLocation}>Use test current location</button><button type="button" onClick={() => onDestinationChange({ id: 'b', label: 'B', detail: '', latitude: 3, longitude: 4 })}>Set destination</button><button type="button" onClick={() => onSubmit({ preventDefault: jest.fn() })}>Submit hybrid</button></>,
   RoadReportDetailPanel: () => null,
   RoadReportSheet: () => null,
   RouteResultsPanel: ({ groups, onRetry, canStartNavigation, guidanceMessage, onStartNavigation }: { groups: RouteComparisonOutcome[]; onRetry: (id: 'WALK' | 'BICYCLE' | 'TRANSIT') => void; canStartNavigation: boolean; guidanceMessage: string; onStartNavigation?: () => void }) => <section><output aria-label="comparison groups">{groups.map((group) => `${group.task.label}:${group.status}`).join('|')}</output><output aria-label="guidance eligible">{String(canStartNavigation)}</output><output aria-label="guidance message">{guidanceMessage}</output><output aria-label="guidance action">{String(Boolean(onStartNavigation))}</output>{onStartNavigation && <button type="button" onClick={onStartNavigation}>Start test guidance</button>}{groups.filter((group) => group.status === 'error').map((group) => <button type="button" key={group.task.id} onClick={() => onRetry(group.task.id)}>Retry {group.task.label}</button>)}</section>,
@@ -43,6 +43,7 @@ function taskOutcome(task: RouteComparisonTask, id: string): RouteComparisonOutc
 
 beforeEach(() => {
   jest.clearAllMocks()
+  getCurrentPosition.mockReset()
   mapTransitStops.length = 0
   localStorage.clear()
   watchPosition.mockImplementation((success, error) => { watchSuccess = success; watchError = error; return 7 })
@@ -126,6 +127,33 @@ describe('Dashboard comparison groups', () => {
     const draggedTasks = mutate.mock.calls.at(-1)![0] as RouteComparisonTask[]
     act(() => mutate.mock.calls.at(-1)![1].onSuccess([taskOutcome(draggedTasks[0], 'dragged')]))
     expect(screen.getByLabelText('guidance message')).toHaveTextContent('Use current location as the route origin to start guidance.')
+  })
+
+  it('reuses a fresh accurate live fix for the planner without requesting location again', async () => {
+    render(<DashboardPage />)
+    const timestamp = Date.now()
+    act(() => watchSuccess({ timestamp, coords: { latitude: 1, longitude: 2, accuracy: 20, heading: null, speed: null } } as GeolocationPosition))
+    await userEvent.click(screen.getByRole('button', { name: 'Enable map' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Planner' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Use test current location' }))
+    expect(getCurrentPosition).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('location pending')).toHaveTextContent('false')
+  })
+
+  it('retries once with normal accuracy after a high-accuracy timeout', async () => {
+    const requests: Array<{ success: PositionCallback; error: PositionErrorCallback; options?: PositionOptions }> = []
+    getCurrentPosition.mockImplementation((success, error, options) => requests.push({ success, error, options }))
+    render(<DashboardPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Enable map' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Planner' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Use test current location' }))
+    expect(requests[0].options).toEqual({ enableHighAccuracy: true, maximumAge: 15_000, timeout: 20_000 })
+    act(() => requests[0].error({ code: 3 } as GeolocationPositionError))
+    expect(requests[1].options).toEqual({ enableHighAccuracy: false, maximumAge: 15_000, timeout: 10_000 })
+    act(() => requests[1].success({ timestamp: Date.now(), coords: { latitude: 1, longitude: 2, accuracy: 250, heading: null, speed: null } } as GeolocationPosition))
+    expect(screen.getByLabelText('live fix')).toHaveTextContent('"accuracy":250')
+    expect(screen.getByLabelText('origin error')).toBeEmptyDOMElement()
+    expect(screen.getByLabelText('location pending')).toHaveTextContent('false')
   })
 
   it('expires guidance at 15 seconds with one timeout and rechecks road-report location freshness', () => {
