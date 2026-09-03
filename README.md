@@ -67,7 +67,7 @@ PM2.5 ditampilkan untuk kondisi saat ini serta bucket prakiraan per jam pada keb
 - Hazard-aware ranking memakai sinyal community report, konfirmasi, dispute, kedekatan, dan kelengkapan bukti; hasil tidak berarti aman atau bebas hazard.
 - Confidence yang ditampilkan adalah **evidence completeness**, bukan probabilitas keselamatan atau akurasi.
 - Reduced-exertion adalah pendekatan berbasis data rute yang tersedia, bukan jaminan wheelchair-safe atau step-free; barrier, kemiringan, lift, dan akses penuh tidak diverifikasi.
-- Break recommendation selalu ditampilkan untuk rute terpilih; kandidat Walk normal muncul otomatis karena semua layer default aktif. Popup rest/transit memakai galeri maksimal tiga foto, lightbox beratribusi dan source/report links aman, facility facts, serta tombol **View 360°** hanya setelah Street View tersedia dalam radius 50 m; data yang hilang tetap unknown dan tidak memverifikasi aksesibilitas penuh atau keselamatan.
+- Break recommendation selalu ditampilkan untuk rute terpilih; kandidat Walk normal muncul otomatis karena semua layer default aktif. Popup rest/transit memakai galeri maksimal tiga foto, lightbox beratribusi, facility facts, serta tombol **View 360°** hanya setelah Street View tersedia dalam radius 50 m; data yang hilang tetap unknown dan tidak memverifikasi aksesibilitas penuh atau keselamatan.
 - Route guidance memerlukan fix browser geolocation berakurasi 0–100 m, berumur maksimal 15 detik, dan berjarak maksimal 150 m dari origin. Rerouting aktif hanya untuk rute non-transit; transit/composite tetap bukan Google Navigation SDK atau turn-by-turn guidance.
 
 ### Kesesuaian Aspek Penilaian
@@ -94,7 +94,7 @@ PM2.5 ditampilkan untuk kondisi saat ini serta bucket prakiraan per jam pada keb
 | **Explainable Ranking** | Alasan, trade-off, limitations, rule version, serta evidence-completeness score dan factors | Bukan klaim keselamatan atau probabilitas |
 | **Hazard-aware Signals** | Ranking dapat mempertimbangkan laporan aktif, confirmation/dispute, evidence score, dan jarak ke polyline | Laporan dapat tidak lengkap; tidak adanya laporan bukan bukti bebas hazard |
 | **Break, Heat & UV** | Nilai Break ringkas untuk setiap rute terpilih, satu alasan saat perlu, serta temperature/UV; kandidat dapat dibuka langsung pada map | Weather unavailable ditampilkan netral; rekomendasi bukan advis medis |
-| **Rest Stops, Transit Stops & Accessibility Facts** | Semua map layer aktif secara default; shared popup menampilkan maksimal tiga foto, lightbox beratribusi, facility facts, dan Street View on-demand bila tersedia | Rest marker selalu signpost R1/R2/R3; informasi aksesibilitas bukan jaminan step-free; tidak ada hidden billed panorama |
+| **Rest Stops, Transit Stops & Accessibility Facts** | Semua map layer aktif secara default; shared popup menampilkan maksimal tiga foto, lightbox beratribusi, facility facts, dan Street View on-demand bila tersedia | Rest marker memakai pin rest-stop tanpa nomor; informasi aksesibilitas bukan jaminan step-free; panorama hanya dimuat setelah diminta pengguna |
 | **Community Verification** | Nearby/create/mine, foto, confirm/dispute, retract verification, owner resolution, dan evidence score | Report aktif terbatas waktu dan merupakan bukti komunitas |
 | **Insights** | Saat ini hanya **Recorded trips** yang merangkum modeled impact dari persisted route result | Hanya modeled impact; bukan GPS trace atau actual exposure measurement |
 
