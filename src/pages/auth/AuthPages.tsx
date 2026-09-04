@@ -79,9 +79,10 @@ type AuthLayoutProps = {
   photo: string
   photoPosition?: string
   fullHeight?: boolean
+  backLabel?: string
 }
 
-function AuthLayout({ children, title, description, photo, photoPosition = 'center', fullHeight = false }: AuthLayoutProps) {
+function AuthLayout({ children, title, description, photo, photoPosition = 'center', fullHeight = false, backLabel = 'Back' }: AuthLayoutProps) {
   return (
     <main
       id="main-content"
@@ -92,7 +93,7 @@ function AuthLayout({ children, title, description, photo, photoPosition = 'cent
         <div className="w-full max-w-[27rem]">
           <Link className="mb-3 inline-flex min-h-10 items-center gap-2 rounded-lg pr-3 text-sm font-extrabold text-ae-muted no-underline hover:text-ae-brand sm:mb-4" to="/">
             <ArrowLeft className="size-4" aria-hidden="true" />
-            Back
+            {backLabel}
           </Link>
           <h1 className="m-0 text-3xl leading-[1.05] font-black tracking-[-.045em] text-ae-ink sm:text-4xl xl:text-[2.5rem]">{title}</h1>
           <p className="mt-2 mb-4 max-w-md text-sm leading-5 font-semibold text-ae-muted sm:text-base sm:leading-6">{description}</p>
@@ -159,9 +160,11 @@ type PasswordFieldProps = {
   autoComplete: string
   error?: string
   hint?: string
+  showLabel?: string
+  hideLabel?: string
 }
 
-function PasswordField({ label, id, value, onChange, autoComplete, error, hint }: PasswordFieldProps) {
+function PasswordField({ label, id, value, onChange, autoComplete, error, hint, showLabel = 'Show password', hideLabel = 'Hide password' }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false)
   const errorId = `${id}-error`
   const hintId = `${id}-hint`
@@ -186,7 +189,7 @@ function PasswordField({ label, id, value, onChange, autoComplete, error, hint }
         <button
           className="absolute top-1/2 right-3 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-ae-muted hover:bg-ae-soft"
           type="button"
-          aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-label={visible ? hideLabel : showLabel}
           aria-pressed={visible}
           onClick={() => setVisible((current) => !current)}
         >
@@ -212,7 +215,7 @@ function GoogleIcon() {
 
 function OAuthSection({ mode }: { mode: 'login' | 'register' }) {
   const errorPath = mode === 'login' ? '/login' : '/register'
-  const actionLabel = mode === 'login' ? 'Sign in with Google' : 'Sign up with Google'
+  const actionLabel = mode === 'login' ? 'Masuk dengan Google' : 'Sign up with Google'
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
 
@@ -227,9 +230,9 @@ function OAuthSection({ mode }: { mode: 'login' | 'register' }) {
         errorCallbackURL: `${window.location.origin}${errorPath}?oauth=error`,
         requestSignUp: mode === 'register',
       })
-      if (result.error) setError(`Google ${mode === 'login' ? 'sign-in' : 'sign-up'} could not be completed.`)
+      if (result.error) setError(mode === 'login' ? 'Proses masuk dengan Google tidak dapat diselesaikan.' : 'Google sign-up could not be completed.')
     } catch {
-      setError(`Google ${mode === 'login' ? 'sign-in' : 'sign-up'} is temporarily unavailable.`)
+      setError(mode === 'login' ? 'Proses masuk dengan Google sementara tidak tersedia.' : 'Google sign-up is temporarily unavailable.')
     } finally {
       setPending(false)
     }
@@ -244,12 +247,12 @@ function OAuthSection({ mode }: { mode: 'login' | 'register' }) {
         disabled={pending}
       >
         <GoogleIcon />
-        {pending ? 'Connecting…' : actionLabel}
+        {pending ? mode === 'login' ? 'Menghubungkan…' : 'Connecting…' : actionLabel}
       </button>
       {error && <p className="-mt-1 text-sm font-bold text-ae-fastest" role="alert">{error}</p>}
       <div className="flex items-center gap-3 text-xs font-extrabold text-ae-muted" aria-hidden="true">
         <span className="h-px flex-1 bg-ae-line" />
-        or continue with email
+        {mode === 'login' ? 'atau lanjutkan dengan email' : 'or continue with email'}
         <span className="h-px flex-1 bg-ae-line" />
       </div>
     </div>
@@ -263,15 +266,15 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState(
-    new URLSearchParams(location.search).get('oauth') === 'error' ? 'Google sign-in was not completed. Try again.' : '',
+    new URLSearchParams(location.search).get('oauth') === 'error' ? 'Proses masuk dengan Google tidak selesai. Coba lagi.' : '',
   )
   const [pending, setPending] = useState(false)
 
   async function submit(event: FormEvent) {
     event.preventDefault()
     const nextErrors: FieldErrors = {}
-    if (!emailPattern.test(email.trim())) nextErrors.email = 'Enter a valid email address.'
-    if (password.length < 8) nextErrors.password = 'Password must be at least 8 characters.'
+    if (!emailPattern.test(email.trim())) nextErrors.email = 'Masukkan alamat email yang valid.'
+    if (password.length < 8) nextErrors.password = 'Kata sandi minimal 8 karakter.'
     setErrors(nextErrors)
     setFormError('')
     if (Object.values(nextErrors).some(Boolean)) return
@@ -279,12 +282,12 @@ export function LoginPage() {
     try {
       const result = await authClient.signIn.email({ email: email.trim(), password })
       if (result.error) {
-        setFormError('Email or password is incorrect.')
+        setFormError('Email atau kata sandi salah.')
         return
       }
       navigate('/dashboard')
     } catch {
-      setFormError('Sign-in is temporarily unavailable. Try again later.')
+      setFormError('Layanan masuk sementara tidak tersedia. Coba lagi nanti.')
     } finally {
       setPending(false)
     }
@@ -294,21 +297,22 @@ export function LoginPage() {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      description={resetCompleted ? 'Your password was updated. Sign in to continue.' : 'Sign in to access your saved routes and travel preferences.'}
+      title="Selamat datang kembali"
+      description={resetCompleted ? 'Kata sandi Anda sudah diperbarui. Masuk untuk melanjutkan.' : 'Masuk untuk mengakses rute tersimpan dan preferensi perjalanan Anda.'}
       photo={loginPhoto}
       photoPosition="62% center"
       fullHeight
+      backLabel="Kembali"
     >
       <div className="grid gap-3 sm:gap-4">
         <OAuthSection mode="login" />
         <form className="grid gap-3 sm:gap-4" onSubmit={submit} noValidate>
           <Field label="Email" id="login-email" type="email" value={email} onChange={(value) => { setEmail(value); setErrors((current) => ({ ...current, email: undefined })) }} placeholder="name@email.com" autoComplete="email" icon={Mail} error={errors.email} />
-          <PasswordField label="Password" id="login-password" value={password} onChange={(value) => { setPassword(value); setErrors((current) => ({ ...current, password: undefined })) }} autoComplete="current-password" error={errors.password} />
-          <div className="flex justify-end"><Link className="text-sm font-extrabold text-ae-brand underline underline-offset-4" to="/forgot-password">Forgot password?</Link></div>
+          <PasswordField label="Kata sandi" id="login-password" value={password} onChange={(value) => { setPassword(value); setErrors((current) => ({ ...current, password: undefined })) }} autoComplete="current-password" error={errors.password} showLabel="Tampilkan kata sandi" hideLabel="Sembunyikan kata sandi" />
+          <div className="flex justify-end"><Link className="text-sm font-extrabold text-ae-brand underline underline-offset-4" to="/forgot-password">Lupa kata sandi?</Link></div>
           {formError && <p className="-mt-1 text-sm font-bold text-ae-fastest" role="alert">{formError}</p>}
-          <button className={buttonClass} type="submit" disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
-          <p className="text-center text-sm font-bold text-ae-muted">Don't have an account? <Link className="font-black text-ae-brand underline underline-offset-4" to="/register">Create an account</Link></p>
+          <button className={buttonClass} type="submit" disabled={pending}>{pending ? 'Sedang masuk…' : 'Masuk'}</button>
+          <p className="text-center text-sm font-bold text-ae-muted">Belum punya akun? <Link className="font-black text-ae-brand underline underline-offset-4" to="/register">Daftar</Link></p>
         </form>
       </div>
     </AuthLayout>
