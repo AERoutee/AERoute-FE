@@ -13,6 +13,8 @@ const getCurrentPosition = jest.fn()
 const clearWatch = jest.fn()
 const mockCompareRoutes = jest.fn()
 const mockGetNearbyRoadReports = jest.fn()
+const speak = jest.fn()
+const cancelSpeech = jest.fn()
 const mapTransitStops: unknown[][] = []
 const mapRestStops: unknown[][] = []
 let watchSuccess: PositionCallback
@@ -50,6 +52,9 @@ beforeEach(() => {
     localStorage.clear()
   watchPosition.mockImplementation((success, error) => { watchSuccess = success; watchError = error; return 7 })
   Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { watchPosition, getCurrentPosition, clearWatch } })
+  const indonesianVoice = { name: 'Google Bahasa Indonesia', lang: 'id-ID' }
+  Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: { speak, cancel: cancelSpeech, getVoices: () => [indonesianVoice] } })
+  Object.defineProperty(window, 'SpeechSynthesisUtterance', { configurable: true, value: class { text: string; lang = ''; rate = 1; voice: object | null = null; constructor(text: string) { this.text = text } } })
 })
 
 describe('Dashboard comparison groups', () => {
@@ -107,6 +112,10 @@ describe('Dashboard comparison groups', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Emit left maneuver' }))
     expect(screen.getByTestId('navigation-maneuver-icon')).toHaveClass('lucide-corner-up-left')
     expect(screen.getByText('Belok kiri ke Jalan Utama')).toBeInTheDocument()
+    expect(speak).toHaveBeenCalledTimes(1)
+    expect(speak.mock.calls[0][0]).toMatchObject({ text: 'Dalam 80 meter, Belok kiri ke Jalan Utama', lang: 'id-ID', voice: { name: 'Google Bahasa Indonesia', lang: 'id-ID' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Emit left maneuver' }))
+    expect(speak).toHaveBeenCalledTimes(1)
     const stop = screen.getByRole('button', { name: 'Hentikan navigasi' })
     expect(stop).not.toHaveClass('bg-ae-soft', 'hover:bg-ae-line')
     fireEvent.click(screen.getByRole('button', { name: 'Rute' }))

@@ -83,7 +83,8 @@ export function transitStops(route?: RouteOption): TransitStop[] {
     const mode = transitSegmentMode(segment)
     if (mode !== 'TRANSIT' && !segment.vehicleType) return []
     const vehicleType = segment.vehicleType ?? mode
-    const marker = vehicleType === 'BUS' ? 'B' : vehicleType === 'SUBWAY' ? 'M' : 'T'
+    const normalizedVehicle = vehicleType.toUpperCase().replaceAll('-', '_').replaceAll(' ', '_')
+    const marker = ['BUS', 'INTERCITY_BUS', 'TROLLEYBUS', 'COACH'].includes(normalizedVehicle) ? 'B' : ['SUBWAY', 'METRO', 'METRO_RAIL'].includes(normalizedVehicle) ? 'M' : 'T'
     const line = segment.lineShortName ?? segment.lineName
     return ([['departure', segment.departureStop], ['arrival', segment.arrivalStop]] as const).flatMap(([role, stop]) => {
       if (!stop?.location) return []

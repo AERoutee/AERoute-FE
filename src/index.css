@@ -54,6 +54,10 @@
   align-items: start;
 }
 
+.gm-style .aeroute-place-grid-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .gm-style .aeroute-place-primary,
 .gm-style .aeroute-place-facilities {
   min-width: 0;
@@ -61,6 +65,14 @@
 
 .gm-style .aeroute-place-facilities dl {
   grid-template-columns: 1fr !important;
+}
+
+.gm-style .aeroute-place-photo {
+  display: block;
+  width: 100%;
+  height: clamp(10rem, 24vw, 15rem);
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
 }
 
 @media (max-width: 30rem) {

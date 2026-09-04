@@ -1,11 +1,11 @@
-import { Camera, KeyRound, Pencil } from 'lucide-react'
+import { Camera, KeyRound, Pencil, Volume2 } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { resolveProfileAvatarUrl } from '@/api/profile'
 import { authClient } from '@/config'
 import { useToast } from '@/context'
 import { useMutationRemoveProfileAvatar, useMutationUploadProfileAvatar } from '@/hooks/profile'
-import { getApiErrorMessage } from '@/lib'
+import { getApiErrorMessage, isNavigationVoiceEnabled, saveNavigationVoice } from '@/lib'
 import { AvatarActionDialog, AvatarCropDialog, EditNameDialog, ProfileRoadRibbon } from './components'
 
 type Account = { providerId?: string }
@@ -32,6 +32,7 @@ export function ProfilePage() {
   const [passwordErrors, setPasswordErrors] = useState<PasswordErrors>({})
   const [isPending, setIsPending] = useState(false)
   const [failedImage, setFailedImage] = useState<string | null>(null)
+  const [navigationVoice, setNavigationVoice] = useState(isNavigationVoiceEnabled)
   const hasCredential = accounts.some((account) => account.providerId === 'credential')
   const isAvatarPending = uploadAvatar.isPending || removeAvatar.isPending
   const avatarUrl = resolveProfileAvatarUrl(user?.image)
@@ -167,6 +168,11 @@ export function ProfilePage() {
           <div><label className="mb-2 block text-sm font-extrabold" htmlFor="confirm-password">Confirm new password</label><input className={inputClass} id="confirm-password" type="password" value={confirmation} onChange={(event) => { setConfirmation(event.target.value); setPasswordErrors((errors) => ({ ...errors, confirmation: undefined })) }} autoComplete="new-password" aria-invalid={Boolean(passwordErrors.confirmation)} aria-describedby={passwordErrors.confirmation ? 'confirm-password-error' : undefined} />{passwordErrors.confirmation && <p className="mt-2 text-sm font-bold text-ae-fastest" id="confirm-password-error" role="alert">{passwordErrors.confirmation}</p>}</div>
           <button className="min-h-12 rounded-xl bg-ae-ink px-5 text-sm font-black text-white hover:bg-ae-brand" disabled={isPending}>Change password</button><button className="min-h-11 text-sm font-extrabold text-ae-brand" type="button" onClick={() => void startOtpReset()} disabled={isPending}>Forgot current password?</button>
         </form> : <div className="mt-7"><p className="m-0 text-sm leading-6 font-semibold text-ae-muted">Verify your email with a security code before creating a password.</p><button className="mt-5 min-h-12 rounded-xl bg-ae-ink px-5 text-sm font-black text-white hover:bg-ae-brand" type="button" onClick={() => void startOtpReset()} disabled={isPending}>{isPending ? 'Sending code...' : 'Set a password'}</button></div>}
+      </section>
+
+      <section className="mt-6 rounded-[2rem] border border-ae-line bg-white p-6 shadow-[0_18px_50px_rgba(20,41,34,.07)] sm:p-8" aria-labelledby="navigation-settings-title">
+        <div className="flex items-center gap-4"><span className="grid size-12 place-items-center rounded-full bg-ae-soft text-ae-brand"><Volume2 className="size-5" aria-hidden="true" /></span><div><h2 className="m-0 text-2xl font-black" id="navigation-settings-title">Navigasi</h2><p className="mt-1 mb-0 text-sm font-semibold text-ae-muted">Atur panduan selama perjalanan.</p></div></div>
+        <div className="mt-6 flex items-center justify-between gap-4"><div><strong className="block text-sm font-black">Panduan suara navigasi</strong><span className="mt-1 block text-sm font-semibold text-ae-muted">Bacakan jarak dan manuver berikutnya.</span></div><button className={`relative h-8 w-14 shrink-0 rounded-full transition ${navigationVoice ? 'bg-ae-brand' : 'bg-ae-line'}`} type="button" role="switch" aria-checked={navigationVoice} aria-label="Panduan suara navigasi" onClick={() => setNavigationVoice((enabled) => { saveNavigationVoice(!enabled); return !enabled })}><span className={`absolute top-1 size-6 rounded-full bg-white shadow transition-transform ${navigationVoice ? 'translate-x-6' : 'translate-x-1'}`} aria-hidden="true" /></button></div>
       </section>
     </div>
     <AvatarActionDialog isOpen={isAvatarMenuOpen} hasImage={Boolean(user?.image)} isPending={isAvatarPending} onUpload={chooseAvatar} onRemove={() => void deleteCurrentAvatar()} onClose={() => setIsAvatarMenuOpen(false)} />

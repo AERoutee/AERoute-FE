@@ -7,7 +7,7 @@ import { RoutePreviewMap } from '@/components'
 import { ConfirmationDialog } from '@/components/common'
 import { useToast } from '@/context'
 import { useDraggablePanel, useMobileSheet, useMutationCreateRouteComparison, useRecordTripImpact } from '@/hooks'
-import { canStartNavigationFrom, getApiErrorMessage, hazardReportIds, initialRouteView, itineraryModeRequests, isArrivalFix, loadMapLayers, routeGuidanceEligibility, routeViews, saveMapLayers, savedCommuteRequest, savedCommuteSelectedModes, selectedModeLabel, shouldTriggerOffRouteReroute, transitStops, type OriginSource } from '@/lib'
+import { canStartNavigationFrom, getApiErrorMessage, hazardReportIds, initialRouteView, itineraryModeRequests, isArrivalFix, loadMapLayers, routeGuidanceEligibility, routeViews, saveMapLayers, savedCommuteRequest, savedCommuteSelectedModes, selectedModeLabel, shouldTriggerOffRouteReroute, speakNavigationInstruction, transitStops, type OriginSource } from '@/lib'
 import { GUIDANCE_FIX_MAX_AGE_MS } from '@/lib/navigation-reroute'
 import { saveRouteSummary } from '@/lib/route-summary'
 import type { AccessibilityMode, DirectTravelMode, LiveLocation, Place, RoadReport, RoadReportBounds, RouteComparisonOutcome, RouteComparisonTask, RouteOption, RoutePreference, RouteTaskId, SavedCommute, TransitPreference } from '@/types'
@@ -125,6 +125,7 @@ export default function DashboardPage() {
   const [rerouteStatus, setRerouteStatus] = useState<RerouteStatus>('idle')
   const [showImpactConfirmation, setShowImpactConfirmation] = useState(false)
   const watchIdRef = useRef<number | null>(null)
+  const spokenInstructionRef = useRef('')
   const reportRequestRef = useRef(0)
   const rerouteControllerRef = useRef<AbortController | null>(null)
   const rerouteRequestRef = useRef(0)
@@ -290,6 +291,13 @@ export default function DashboardPage() {
     const retryRequestId = rerouteRequestRef.current
     hazardRetryTimerRef.current = window.setTimeout(() => { if (retryRequestId === rerouteRequestRef.current) void dynamicRerouteRef.current() }, delay)
   }, [reports, selected, selectedRoute, isNavigating])
+  useEffect(() => {
+    if (!isNavigating || !navigationProgress?.instruction) { spokenInstructionRef.current = ''; if (!isNavigating && 'speechSynthesis' in window) window.speechSynthesis.cancel(); return }
+    const key = `${navigationProgress.maneuver ?? ''}:${navigationProgress.instruction}`
+    if (spokenInstructionRef.current === key) return
+    spokenInstructionRef.current = key
+    speakNavigationInstruction(navigationProgress.instruction, navigationProgress.distanceToManeuverMeters)
+  }, [isNavigating, navigationProgress?.distanceToManeuverMeters, navigationProgress?.instruction, navigationProgress?.maneuver])
   useEffect(() => {
     if (!isNavigating || promptedImpactRef.current || recordedImpactRef.current || !navigationSessionRef.current || !isArrivalFix(navigationSessionRef.current.destination, liveLocation)) return
     promptedImpactRef.current = true

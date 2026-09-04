@@ -21,7 +21,7 @@ describe('MapLayerControl settings', () => {
       expect(screen.getByRole('checkbox', { name })).toBeEnabled()
     }
     expect(screen.queryByText('Unavailable')).not.toBeInTheDocument()
-    expect(screen.getAllByText('Ditampilkan saat data rute tersedia')).toHaveLength(3)
+    expect(screen.queryByText('Ditampilkan saat data rute tersedia')).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Cuaca sepanjang rute' }))
     expect(onChange).toHaveBeenCalledWith({ ...layers, weather: true })

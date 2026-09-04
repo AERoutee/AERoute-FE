@@ -403,7 +403,7 @@ describe('RoutePreviewMap initial camera', () => {
     expect(content.querySelectorAll('img[alt^="Station Park foto"]')).toHaveLength(1)
     expect(within(content).getByAltText('Station Park foto 1')).toHaveAttribute('width', '16')
     expect(within(content).getByAltText('Station Park foto 1')).toHaveAttribute('height', '9')
-    expect(within(content).getByText('1 dari 3')).toBeTruthy()
+    expect(content).not.toHaveTextContent('1 dari 3')
     expect(within(content).getAllByRole('button', { name: /tampilkan foto/i })).toHaveLength(3)
     expect(content).toHaveTextContent('Contributor 1')
     expect(within(content).queryByRole('link', { name: 'View photo on Google Maps' })).not.toBeInTheDocument()
@@ -413,7 +413,7 @@ describe('RoutePreviewMap initial camera', () => {
     await userEvent.click(within(content).getByRole('button', { name: 'Foto berikutnya' }))
     await Promise.resolve()
     expect(within(content).getByAltText('Station Park foto 2')).toBeTruthy()
-    expect(within(content).getByText('2 dari 3')).toBeTruthy()
+    expect(content).not.toHaveTextContent('2 dari 3')
     expect(document.activeElement).toBe(within(content).getByRole('button', { name: 'Foto berikutnya' }))
     expect(document.activeElement?.isConnected).toBe(true)
     await userEvent.click(within(content).getByRole('button', { name: 'Foto berikutnya' }))
@@ -430,7 +430,7 @@ describe('RoutePreviewMap initial camera', () => {
     failed.dispatchEvent(new Event('error'))
     expect(within(content).getByAltText('Station Park foto 2')).toHaveAttribute('src', expect.stringContaining('AUac2'))
     expect(content).toHaveTextContent('Contributor 2')
-    expect(within(content).getByText('2 dari 2')).toBeTruthy()
+    expect(content).not.toHaveTextContent('2 dari 2')
     content.remove()
   })
 
@@ -456,7 +456,7 @@ describe('RoutePreviewMap initial camera', () => {
     await userEvent.click(within(content).getByRole('button', { name: 'Foto berikutnya' }))
     await userEvent.click(within(content).getByRole('button', { name: 'Buka foto 2' }))
     const dialog = screen.getByRole('dialog', { name: 'Gallery Park foto' })
-    expect(within(dialog).getByText('2 dari 3')).toBeInTheDocument()
+    expect(dialog).not.toHaveTextContent('2 dari 3')
     expect(within(dialog).getByAltText('Gallery Park foto 2')).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Foto berikutnya' }))
     await Promise.resolve()
@@ -511,13 +511,17 @@ describe('RoutePreviewMap initial camera', () => {
 
   it('uses distinct static pictograms and vehicle-specific titles for transit markers', async () => {
     const stops = [
-      ['BUS', 'B1'], ['SUBWAY', 'S1'], ['TRAIN', 'T1'], ['BICYCLE', 'C1'], ['WALK', 'W1'], ['FERRY', 'F1'],
+      ['BUS', 'B1'], ['SUBWAY', 'S1'], ['COMMUTER_TRAIN', 'T1'], ['BICYCLE', 'C1'], ['WALK', 'W1'], ['FERRY', 'F1'],
     ].map(([vehicleType, label], index) => ({ name: `${vehicleType} Hub`, location: { latitude: -6.2 - index / 100, longitude: 106.8 }, ordinal: index + 1, role: 'departure' as const, vehicleType, label }))
     render(<RoutePreviewMap origin={null} destination={null} transitStops={stops} />)
     await finishMapLoad()
     const Marker = google.maps.Marker as unknown as jest.Mock
     const transitOptions = Marker.mock.calls.map(([options]) => options).filter((options) => stops.some((stop) => `${stop.vehicleType} stop: ${stop.name}` === options.title))
     expect(new Set(transitOptions.map((options) => options.icon.url)).size).toBe(6)
+    const busIcon = transitOptions.find((options) => options.title.startsWith('BUS stop:'))?.icon.url
+    const trainIcon = transitOptions.find((options) => options.title.startsWith('COMMUTER_TRAIN stop:'))?.icon.url
+    expect(trainIcon).not.toBe(busIcon)
+    expect(decodeURIComponent(trainIcon)).toContain('#087f5b')
     expect(transitOptions.every((options) => options.icon.url.startsWith('data:image/svg+xml'))).toBe(true)
     expect(transitOptions.every((options) => options.icon.url !== 'map-marker.png')).toBe(true)
     expect(transitOptions.every((options) => options.label === undefined)).toBe(true)
@@ -543,13 +547,33 @@ describe('RoutePreviewMap initial camera', () => {
     expect(streetViewGetPanorama).toHaveBeenCalledTimes(1)
     const available = infoWindowSetContent.mock.calls.at(-1)![0] as HTMLElement
     for (const text of ['Perhentian transit', 'Central', 'Rail Street', 'Status buka Tutup', 'Toilet Tersedia', 'Parkir Tersedia', 'Pintu masuk Tersedia', 'Toilet aksesibel Tidak tersedia', 'Tempat duduk aksesibel Tersedia', 'Informasi aksesibilitas tersedia', 'Informasi aksesibilitas dari Google Maps; bukan jaminan rute bebas tangga.']) expect(available).toHaveTextContent(text)
+    expect(available.querySelector('.aeroute-place-grid')?.children).toHaveLength(2)
+    expect(available.querySelector('.aeroute-place-primary')).toContainElement(available.querySelector('[data-place-gallery]'))
+    expect(available.querySelector('.aeroute-place-facilities')).toHaveTextContent('Status buka TutupToilet TersediaParkir TersediaPintu masuk TersediaToilet aksesibel Tidak tersediaTempat duduk aksesibel Tersedia')
     expect(available).not.toHaveTextContent('Open in Google Maps')
     expect(available).not.toHaveTextContent(/safety/i)
     expect(available.querySelector('a[href="https://evil.example/person"]')).not.toBeInTheDocument()
     const image = available.querySelector('img[alt="Central Station foto 1"]')
     expect(image).toHaveAttribute('src', expect.stringContaining('/api/v1/place-photos'))
+    expect(image).toHaveClass('aeroute-place-photo')
     image?.dispatchEvent(new Event('error'))
     expect(available.querySelector('img[alt="Central Station foto 1"]')).not.toBeInTheDocument()
+  })
+
+  it('omits the transit facility column when Google returns no facility data', async () => {
+    const stop = { name: 'Palmerah', location: { latitude: -6.2, longitude: 106.8 }, ordinal: 1, role: 'departure' as const, vehicleType: 'COMMUTER_TRAIN', label: 'T1' }
+    getStopDetails.mockResolvedValue({ status: 'AVAILABLE', place: { id: 'palmerah', name: 'Stasiun Palmerah', formattedAddress: 'Jakarta', location: stop.location, types: ['train_station'], photos: [{ name: 'places/ChIJ123/photos/AUac123' }], safetyVerified: false } })
+    render(<RoutePreviewMap origin={null} destination={null} transitStops={[stop]} />)
+    await finishMapLoad()
+    const Marker = google.maps.Marker as unknown as jest.Mock
+    markerListeners[Marker.mock.calls.findIndex(([options]) => options.title === 'COMMUTER_TRAIN stop: Palmerah')].click()
+    await waitFor(() => expect((infoWindowSetContent.mock.calls.at(-1)![0] as HTMLElement).querySelector('.aeroute-place-grid')).not.toBeNull())
+
+    const available = infoWindowSetContent.mock.calls.at(-1)![0] as HTMLElement
+    expect(available.querySelector('.aeroute-place-grid')?.children).toHaveLength(1)
+    expect(available.querySelector('.aeroute-place-grid')).toHaveClass('aeroute-place-grid-single')
+    expect(available.querySelector('.aeroute-place-facilities')).not.toBeInTheDocument()
+    expect(available).not.toHaveTextContent(/\d+ dari \d+/)
   })
 
   it.each([

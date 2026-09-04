@@ -170,7 +170,7 @@ const transitIconUrls = {
 
 function transitIcon(vehicleType: string) {
   const type = vehicleType.trim().toUpperCase().replaceAll('-', '_').replaceAll(' ', '_')
-  const key = type === 'BUS' ? 'bus' : type === 'SUBWAY' || type === 'METRO' ? 'subway' : type === 'TRAIN' || type === 'RAIL' || type === 'LIGHT_RAIL' ? 'train' : type === 'BICYCLE' || type === 'BIKE' ? 'bicycle' : type === 'WALK' || type === 'WALKING' ? 'walk' : 'transit'
+  const key = ['BUS', 'INTERCITY_BUS', 'TROLLEYBUS', 'COACH'].includes(type) ? 'bus' : ['SUBWAY', 'METRO', 'METRO_RAIL'].includes(type) ? 'subway' : ['TRAIN', 'RAIL', 'LIGHT_RAIL', 'COMMUTER_TRAIN', 'HEAVY_RAIL', 'HIGH_SPEED_TRAIN', 'LONG_DISTANCE_TRAIN', 'MONORAIL', 'TRAM'].includes(type) ? 'train' : type === 'BICYCLE' || type === 'BIKE' ? 'bicycle' : type === 'WALK' || type === 'WALKING' ? 'walk' : 'transit'
   return { url: transitIconUrls[key], size: new google.maps.Size(46, 46), scaledSize: new google.maps.Size(46, 46), anchor: new google.maps.Point(23, 42), labelOrigin: new google.maps.Point(23, 17) }
 }
 
@@ -266,7 +266,7 @@ function openPhotoLightbox(place: RestStopCandidate, sourcePhotos: PlacePhoto[],
     const image = document.createElement('img')
     image.src = source
     image.alt = `${place.name} foto ${index + 1}`
-    image.style.cssText = 'display:block;width:100%;max-height:70vh;object-fit:contain;border-radius:10px;background:#e5f4ed;'
+    image.style.cssText = 'display:block;width:100%;aspect-ratio:16 / 9;object-fit:cover;border-radius:10px;background:#e5f4ed;'
     image.addEventListener('error', () => { photos.splice(index, 1); if (!photos.length) { dismiss(); return }; index = Math.min(index, photos.length - 1); renderPhoto() })
     panel.append(image)
     if (photos.length > 1) {
@@ -276,12 +276,8 @@ function openPhotoLightbox(place: RestStopCandidate, sourcePhotos: PlacePhoto[],
       next.style.cssText += 'position:absolute;right:24px;top:50%;transform:translateY(-50%);'
       panel.append(previous, next)
     }
-    const indicator = document.createElement('span')
-    indicator.textContent = `${index + 1} dari ${photos.length}`
-    indicator.setAttribute('aria-live', 'polite')
-    indicator.style.cssText = 'display:block;margin-top:10px;text-align:center;font-size:12px;font-weight:900;'
     appendPhotoAttribution(panel, photo)
-    panel.append(indicator, close)
+    panel.append(close)
     restoreFocus()
   }
   const onKeyDown = (event: KeyboardEvent) => {
@@ -335,7 +331,7 @@ function appendGallery(root: HTMLElement, place: RestStopCandidate) {
     image.alt = `${place.name} foto ${index + 1}`
     image.width = 16
     image.height = 9
-    image.style.cssText = 'display:block;width:100%;height:auto;aspect-ratio:16 / 9;object-fit:cover;'
+    image.className = 'aeroute-place-photo'
     image.addEventListener('error', () => { photos.splice(index, 1); if (!photos.length) { gallery.remove(); return }; index = Math.min(index, photos.length - 1); renderPhoto() })
     button.addEventListener('click', () => openPhotoLightbox(place, photos, index, button))
     button.append(image)
@@ -348,12 +344,7 @@ function appendGallery(root: HTMLElement, place: RestStopCandidate) {
       frame.append(previous, next)
     }
     gallery.append(frame)
-    const indicator = document.createElement('span')
-    indicator.textContent = `${index + 1} dari ${photos.length}`
-    indicator.setAttribute('aria-live', 'polite')
-    indicator.style.cssText = 'display:block;margin-top:6px;text-align:center;font-size:11px;font-weight:900;'
     appendPhotoAttribution(gallery, photo)
-    gallery.append(indicator)
     if (photos.length > 1) {
       const dots = document.createElement('div')
       dots.style.cssText = 'display:flex;justify-content:center;gap:6px;margin-top:6px;'
@@ -450,10 +441,16 @@ function transitStopInfoContent(stop: TransitStop, state: 'loading' | 'error' | 
     return root
   }
   const place = state.place
-  appendGallery(root, place)
-  if (place.formattedAddress) { const address = document.createElement('span'); address.textContent = place.formattedAddress; address.style.cssText = 'display:block;margin-top:8px;font-size:11px;font-weight:700;color:#65766e;'; root.append(address) }
+  const layout = document.createElement('div')
+  layout.className = 'aeroute-place-grid'
+  const primary = document.createElement('div')
+  primary.className = 'aeroute-place-primary'
+  const facilities = document.createElement('div')
+  facilities.className = 'aeroute-place-facilities'
+  appendGallery(primary, place)
+  if (place.formattedAddress) { const address = document.createElement('span'); address.textContent = place.formattedAddress; address.style.cssText = 'display:block;margin-top:8px;font-size:11px;font-weight:700;color:#65766e;'; primary.append(address) }
   const accessibility = place.accessibility
-  if (accessibility && Object.values(accessibility).some(Boolean)) { const badge = document.createElement('strong'); badge.textContent = 'Informasi aksesibilitas tersedia'; badge.style.cssText = 'display:inline-flex;margin-top:8px;border-radius:999px;background:#e5f4ed;padding:5px 8px;font-size:10px;font-weight:900;color:#087f5b;'; root.append(badge) }
+  if (accessibility && Object.values(accessibility).some(Boolean)) { const badge = document.createElement('strong'); badge.textContent = 'Informasi aksesibilitas tersedia'; badge.style.cssText = 'display:inline-flex;margin-top:8px;border-radius:999px;background:#e5f4ed;padding:5px 8px;font-size:10px;font-weight:900;color:#087f5b;'; primary.append(badge) }
   const rows: Array<{ label: string; value: string; icon?: string }> = []
   const add = (label: string, value: boolean | undefined, positive: string, negative: string, icon?: string) => { if (value !== undefined) rows.push({ label, value: value ? positive : negative, icon }) }
   add('Status buka', place.openNow, 'Buka sekarang', 'Tutup')
@@ -462,8 +459,12 @@ function transitStopInfoContent(stop: TransitStop, state: 'loading' | 'error' | 
   add('Pintu masuk', accessibility?.wheelchairAccessibleEntrance, 'Tersedia', 'Tidak tersedia', colorDoorIcon)
   add('Toilet aksesibel', accessibility?.wheelchairAccessibleRestroom, 'Tersedia', 'Tidak tersedia', colorToiletIcon)
   add('Tempat duduk aksesibel', accessibility?.wheelchairAccessibleSeating, 'Tersedia', 'Tidak tersedia', colorChairIcon)
-  facilityRows(root, rows)
-  if (accessibility && Object.values(accessibility).some((value) => value !== undefined)) { const disclosure = document.createElement('small'); disclosure.textContent = 'Informasi aksesibilitas dari Google Maps; bukan jaminan rute bebas tangga.'; disclosure.style.cssText = 'display:block;margin-top:8px;font-size:10px;font-weight:700;color:#65766e;'; root.append(disclosure) }
+  facilityRows(facilities, rows)
+  if (accessibility && Object.values(accessibility).some((value) => value !== undefined)) { const disclosure = document.createElement('small'); disclosure.textContent = 'Informasi aksesibilitas dari Google Maps; bukan jaminan rute bebas tangga.'; disclosure.style.cssText = 'display:block;margin-top:8px;font-size:10px;font-weight:700;color:#65766e;'; primary.append(disclosure) }
+  layout.classList.toggle('aeroute-place-grid-single', rows.length === 0)
+  layout.append(primary)
+  if (rows.length) layout.append(facilities)
+  root.append(layout)
   return root
 }
 
@@ -830,7 +831,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
         const requestId = ++transitStopRequestRef.current
         let infoWindow = transitStopInfoWindowRef.current
         if (!infoWindow) {
-          infoWindow = new google.maps.InfoWindow({ disableAutoPan: false, maxWidth: 380, headerDisabled: true })
+          infoWindow = new google.maps.InfoWindow({ disableAutoPan: false, maxWidth: 560, headerDisabled: true })
           infoWindow.addListener('closeclick', () => closeTransitPopup(false))
           transitStopInfoWindowRef.current = infoWindow
         }
