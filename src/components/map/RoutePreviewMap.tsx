@@ -168,8 +168,30 @@ const transitIconUrls = {
   transit: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="21" fill="#51645b"/><path d="M11 21h16l-4-4 3-3 9 9-9 9-3-3 4-4H11v-4z" fill="white"/></svg>')}`,
 }
 
+function normalizedVehicleType(vehicleType: string) {
+  return vehicleType.trim().toUpperCase().replaceAll('-', '_').replaceAll(' ', '_')
+}
+
+function transitVehicleLabel(vehicleType: string) {
+  const type = normalizedVehicleType(vehicleType)
+  if (['BUS', 'INTERCITY_BUS', 'COACH'].includes(type)) return 'Bus'
+  if (type === 'TROLLEYBUS') return 'Bus troli'
+  if (['SUBWAY', 'METRO', 'METRO_RAIL'].includes(type)) return 'MRT'
+  if (type === 'COMMUTER_TRAIN') return 'Kereta komuter'
+  if (type === 'HIGH_SPEED_TRAIN') return 'Kereta cepat'
+  if (type === 'LONG_DISTANCE_TRAIN') return 'Kereta jarak jauh'
+  if (['TRAIN', 'RAIL', 'HEAVY_RAIL'].includes(type)) return 'Kereta'
+  if (type === 'LIGHT_RAIL') return 'LRT'
+  if (type === 'TRAM') return 'Trem'
+  if (type === 'MONORAIL') return 'Monorel'
+  if (type === 'FERRY') return 'Feri'
+  if (type === 'BICYCLE' || type === 'BIKE') return 'Sepeda'
+  if (type === 'WALK' || type === 'WALKING') return 'Jalan kaki'
+  return 'Transit'
+}
+
 function transitIcon(vehicleType: string) {
-  const type = vehicleType.trim().toUpperCase().replaceAll('-', '_').replaceAll(' ', '_')
+  const type = normalizedVehicleType(vehicleType)
   const key = ['BUS', 'INTERCITY_BUS', 'TROLLEYBUS', 'COACH'].includes(type) ? 'bus' : ['SUBWAY', 'METRO', 'METRO_RAIL'].includes(type) ? 'subway' : ['TRAIN', 'RAIL', 'LIGHT_RAIL', 'COMMUTER_TRAIN', 'HEAVY_RAIL', 'HIGH_SPEED_TRAIN', 'LONG_DISTANCE_TRAIN', 'MONORAIL', 'TRAM'].includes(type) ? 'train' : type === 'BICYCLE' || type === 'BIKE' ? 'bicycle' : type === 'WALK' || type === 'WALKING' ? 'walk' : 'transit'
   return { url: transitIconUrls[key], size: new google.maps.Size(46, 46), scaledSize: new google.maps.Size(46, 46), anchor: new google.maps.Point(23, 42), labelOrigin: new google.maps.Point(23, 17) }
 }
@@ -429,7 +451,7 @@ function transitParking(options?: ParkingOptions) {
 function transitStopInfoContent(stop: TransitStop, state: 'loading' | 'error' | TransitStopDetailsResult, close: () => void) {
   const root = popupShell('Perhentian transit', stop.name, close)
   const baseDetails = document.createElement('p')
-  baseDetails.textContent = `${stop.role === 'departure' ? 'Keberangkatan' : 'Kedatangan'} · Perhentian ${stop.ordinal} · ${stop.vehicleType}${stop.line ? ` · ${stop.line}` : ''}${stop.headsign ? ` · menuju ${stop.headsign}` : ''}`
+  baseDetails.textContent = `${stop.role === 'departure' ? 'Keberangkatan' : 'Kedatangan'} · Perhentian ${stop.ordinal} · ${transitVehicleLabel(stop.vehicleType)}${stop.line ? ` · ${stop.line}` : ''}${stop.headsign ? ` · menuju ${stop.headsign}` : ''}`
   baseDetails.style.cssText = 'margin:5px 0 0;font-size:12px;line-height:1.5;font-weight:700;color:#51645b;'
   root.append(baseDetails)
   if (state === 'loading' || state === 'error' || state.status === 'NOT_FOUND') {
@@ -821,7 +843,7 @@ function RoutePreviewMapComponent({ origin, destination, routes = emptyRoutes, s
     transitStopMarkersRef.current.forEach((marker) => marker.setMap(null))
     transitStopMarkersRef.current = []
     transitStopMarkersRef.current = transitStops.map((stop) => {
-      const marker = new google.maps.Marker({ map, position: { lat: stop.location.latitude, lng: stop.location.longitude }, icon: transitIcon(stop.vehicleType), title: `${stop.vehicleType} stop: ${stop.name}`, zIndex: 6, optimized: false })
+      const marker = new google.maps.Marker({ map, position: { lat: stop.location.latitude, lng: stop.location.longitude }, icon: transitIcon(stop.vehicleType), title: `Perhentian ${transitVehicleLabel(stop.vehicleType)}: ${stop.name}`, zIndex: 6, optimized: false })
       marker.addListener('click', () => {
         dismissPopupPeers('transit')
         closeTransitPopup()

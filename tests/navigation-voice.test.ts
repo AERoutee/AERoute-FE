@@ -26,6 +26,17 @@ describe('navigation voice', () => {
     expect(speak.mock.calls[0][0]).toMatchObject({ lang: 'id-ID', voice: indonesian, text: 'Dalam 80 meter, Belok kiri' })
   })
 
+  it('does not fall back to an English voice when Indonesian is unavailable', () => {
+    const speak = jest.fn()
+    const synth = { getVoices: () => [english], speak, cancel: jest.fn(), addEventListener: jest.fn(), removeEventListener: jest.fn() }
+    Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: synth })
+
+    speakNavigationInstruction('Belok kiri')
+
+    expect(speak).not.toHaveBeenCalled()
+    expect(synth.addEventListener).toHaveBeenCalledWith('voiceschanged', expect.any(Function))
+  })
+
   it('waits for voiceschanged before speaking when voices are not loaded', () => {
     const speak = jest.fn()
     let listener: (() => void) | undefined

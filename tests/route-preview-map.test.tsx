@@ -317,7 +317,7 @@ describe('RoutePreviewMap initial camera', () => {
     const Marker = google.maps.Marker as unknown as jest.Mock
     const markerIndex = (title: string) => Marker.mock.calls.findIndex(([options]) => options.title === title)
     const reportMarker = markerIndex(report.description)
-    const transitMarker = markerIndex('BUS stop: Central')
+    const transitMarker = markerIndex('Perhentian Bus: Central')
     const restMarker = markerIndex('Park: rest-stop candidate')
 
     act(() => markerListeners[reportMarker].click())
@@ -516,16 +516,17 @@ describe('RoutePreviewMap initial camera', () => {
     render(<RoutePreviewMap origin={null} destination={null} transitStops={stops} />)
     await finishMapLoad()
     const Marker = google.maps.Marker as unknown as jest.Mock
-    const transitOptions = Marker.mock.calls.map(([options]) => options).filter((options) => stops.some((stop) => `${stop.vehicleType} stop: ${stop.name}` === options.title))
+    const expectedTitles = ['Perhentian Bus: BUS Hub', 'Perhentian MRT: SUBWAY Hub', 'Perhentian Kereta komuter: COMMUTER_TRAIN Hub', 'Perhentian Sepeda: BICYCLE Hub', 'Perhentian Jalan kaki: WALK Hub', 'Perhentian Feri: FERRY Hub']
+    const transitOptions = Marker.mock.calls.map(([options]) => options).filter((options) => expectedTitles.includes(options.title))
     expect(new Set(transitOptions.map((options) => options.icon.url)).size).toBe(6)
-    const busIcon = transitOptions.find((options) => options.title.startsWith('BUS stop:'))?.icon.url
-    const trainIcon = transitOptions.find((options) => options.title.startsWith('COMMUTER_TRAIN stop:'))?.icon.url
+    const busIcon = transitOptions.find((options) => options.title.startsWith('Perhentian Bus:'))?.icon.url
+    const trainIcon = transitOptions.find((options) => options.title.startsWith('Perhentian Kereta komuter:'))?.icon.url
     expect(trainIcon).not.toBe(busIcon)
     expect(decodeURIComponent(trainIcon)).toContain('#087f5b')
     expect(transitOptions.every((options) => options.icon.url.startsWith('data:image/svg+xml'))).toBe(true)
     expect(transitOptions.every((options) => options.icon.url !== 'map-marker.png')).toBe(true)
     expect(transitOptions.every((options) => options.label === undefined)).toBe(true)
-    expect(transitOptions.map((options) => options.title)).toEqual(stops.map((stop) => `${stop.vehicleType} stop: ${stop.name}`))
+    expect(transitOptions.map((options) => options.title)).toEqual(expectedTitles)
   })
 
   it('loads transit stop details only after click and renders available evidence safely', async () => {
@@ -536,10 +537,10 @@ describe('RoutePreviewMap initial camera', () => {
     await finishMapLoad()
     expect(getStopDetails).not.toHaveBeenCalled()
     const Marker = google.maps.Marker as unknown as jest.Mock
-    const markerIndex = Marker.mock.calls.findIndex(([options]) => options.title === 'BUS stop: Central')
+    const markerIndex = Marker.mock.calls.findIndex(([options]) => options.title === 'Perhentian Bus: Central')
     markerListeners[markerIndex].click()
     const loading = infoWindowSetContent.mock.calls.at(-1)![0] as HTMLElement
-    expect(loading).toHaveTextContent('Perhentian transitCentralKeberangkatan · Perhentian 1 · BUS · 7 · menuju ParkMemuat detail Google Places…')
+    expect(loading).toHaveTextContent('Perhentian transitCentralKeberangkatan · Perhentian 1 · Bus · 7 · menuju ParkMemuat detail Google Places…')
     expect(getStopDetails).toHaveBeenCalledWith(stop, 'route-result-1', expect.any(AbortSignal))
     expect(streetViewGetPanorama).not.toHaveBeenCalled()
 
@@ -566,12 +567,14 @@ describe('RoutePreviewMap initial camera', () => {
     render(<RoutePreviewMap origin={null} destination={null} transitStops={[stop]} />)
     await finishMapLoad()
     const Marker = google.maps.Marker as unknown as jest.Mock
-    markerListeners[Marker.mock.calls.findIndex(([options]) => options.title === 'COMMUTER_TRAIN stop: Palmerah')].click()
+    markerListeners[Marker.mock.calls.findIndex(([options]) => options.title === 'Perhentian Kereta komuter: Palmerah')].click()
     await waitFor(() => expect((infoWindowSetContent.mock.calls.at(-1)![0] as HTMLElement).querySelector('.aeroute-place-grid')).not.toBeNull())
 
     const available = infoWindowSetContent.mock.calls.at(-1)![0] as HTMLElement
     expect(available.querySelector('.aeroute-place-grid')?.children).toHaveLength(1)
     expect(available.querySelector('.aeroute-place-grid')).toHaveClass('aeroute-place-grid-single')
+    expect(available).toHaveTextContent('Kereta komuter')
+    expect(available).not.toHaveTextContent('COMMUTER_TRAIN')
     expect(available.querySelector('.aeroute-place-facilities')).not.toBeInTheDocument()
     expect(available).not.toHaveTextContent(/\d+ dari \d+/)
   })
@@ -586,10 +589,10 @@ describe('RoutePreviewMap initial camera', () => {
     render(<RoutePreviewMap origin={null} destination={null} transitStops={[stop]} />)
     await finishMapLoad()
     const Marker = google.maps.Marker as unknown as jest.Mock
-    markerListeners[Marker.mock.calls.findIndex(([options]) => options.title === 'BUS stop: Central')].click()
+    markerListeners[Marker.mock.calls.findIndex(([options]) => options.title === 'Perhentian Bus: Central')].click()
     await waitFor(() => expect(infoWindowSetContent.mock.calls.at(-1)![0]).toHaveTextContent(message))
     expect(streetViewGetPanorama).toHaveBeenCalledTimes(1)
-    expect(infoWindowSetContent.mock.calls.at(-1)![0]).toHaveTextContent('CentralKeberangkatan · Perhentian 1 · BUS · 7 · menuju Park')
+    expect(infoWindowSetContent.mock.calls.at(-1)![0]).toHaveTextContent('CentralKeberangkatan · Perhentian 1 · Bus · 7 · menuju Park')
   })
 
   it('aborts transit details on close, another marker, route change, and unmount, then refetches on reopen', async () => {
@@ -601,8 +604,8 @@ describe('RoutePreviewMap initial camera', () => {
     const view = render(<RoutePreviewMap origin={null} destination={null} transitStops={stops} />)
     await finishMapLoad()
     const Marker = google.maps.Marker as unknown as jest.Mock
-    const first = Marker.mock.calls.findIndex(([options]) => options.title === 'BUS stop: Central')
-    const second = Marker.mock.calls.findIndex(([options]) => options.title === 'BUS stop: Park')
+    const first = Marker.mock.calls.findIndex(([options]) => options.title === 'Perhentian Bus: Central')
+    const second = Marker.mock.calls.findIndex(([options]) => options.title === 'Perhentian Bus: Park')
     markerListeners[first].click()
     const firstSignal = getStopDetails.mock.calls[0][2] as AbortSignal
     infoWindowListeners.closeclick()

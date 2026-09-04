@@ -18,14 +18,17 @@ export function speakNavigationInstruction(instruction: string, distanceMeters?:
   const voices = () => typeof synth.getVoices === 'function' ? synth.getVoices() : []
   const distance = distanceMeters === undefined ? '' : distanceMeters < 1000 ? `Dalam ${Math.max(10, Math.round(distanceMeters / 10) * 10)} meter, ` : `Dalam ${(distanceMeters / 1000).toFixed(1)} kilometer, `
   const speak = () => {
+    const voice = indonesianVoice(voices())
+    if (!voice) return false
     const utterance = new SpeechSynthesisUtterance(`${distance}${instruction}`)
     utterance.lang = 'id-ID'
     utterance.rate = 1
-    utterance.voice = indonesianVoice(voices()) ?? null
+    utterance.voice = voice
     synth.cancel()
     synth.speak(utterance)
+    return true
   }
-  if (voices().length || typeof synth.addEventListener !== 'function') { speak(); return }
-  const onVoicesChanged = () => { synth.removeEventListener('voiceschanged', onVoicesChanged); speak() }
+  if (speak() || typeof synth.addEventListener !== 'function') return
+  const onVoicesChanged = () => { if (speak()) synth.removeEventListener('voiceschanged', onVoicesChanged) }
   synth.addEventListener('voiceschanged', onVoicesChanged)
 }
