@@ -1,22 +1,26 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/AERoutee/AERoute-FE/main/src/assets/aeroute-logo.png" alt="AERoute" width="180" />
 
-  # AERoute
-  ### A clearer route for every breath.
+# AERoute
 
-  [![Frontend](https://img.shields.io/badge/GitHub-AERoute--FE-181717?style=for-the-badge&logo=github)](https://github.com/AERoutee/AERoute-FE)
-  [![Backend](https://img.shields.io/badge/GitHub-AERoute--BE-181717?style=for-the-badge&logo=github)](https://github.com/AERoutee/AERoute-BE)
-  [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/AERoutee/AERoute-FE/blob/main/LICENSE)
+### A clearer route for every breath.
 
-  **Submission for ITECHNO CUP 2026 - Web Development**
+[![Live Demo](https://img.shields.io/badge/Live_Demo-aeroute.my.id-0B7A53?style=for-the-badge&logo=googlechrome&logoColor=white)](https://aeroute.my.id)
+[![Frontend](https://img.shields.io/badge/GitHub-AERoute--FE-181717?style=for-the-badge&logo=github)](https://github.com/AERoutee/AERoute-FE)
+[![Backend](https://img.shields.io/badge/GitHub-AERoute--BE-181717?style=for-the-badge&logo=github)](https://github.com/AERoutee/AERoute-BE)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/AERoutee/AERoute-FE/blob/main/LICENSE)
 
-  **By AERoute Team**
+**Submission for ITECHNO CUP 2026 - Web Development**
+
+**By Team singular you**
+
 </div>
 
 ---
 
 ## 📋 Daftar Isi
 
+- [Tim Developer](#-tim-developer)
 - [Tentang Proyek](#-tentang-proyek)
 - [Fitur Unggulan](#-fitur-unggulan)
 - [Demo & Screenshot](#-demo--screenshot)
@@ -26,18 +30,17 @@
 - [Penggunaan](#-penggunaan)
 - [API Documentation](#-api-documentation)
 - [Testing](#-testing)
-- [Tim Developer](#-tim-developer)
 - [Lisensi](#-lisensi)
 
 ---
 
 ## 👥 Tim Developer
 
-| Nama | Peran | GitHub |
-| --- | --- | --- |
-| **Andrian Pratama** | Project Lead & Lead Full-Stack Developer | [@Yanzz231](https://github.com/Yanzz231) |
-| **Jeremy Auriel Zhang** | Full-Stack Developer | [@jeremzhg](https://github.com/jeremzhg) |
-| **Calvin Wu** | Product Manager | [@5calvinw](https://github.com/5calvinw) |
+| Nama                    | Peran                                    | GitHub                                   |
+| ----------------------- | ---------------------------------------- | ---------------------------------------- |
+| **Andrian Pratama**     | Project Lead & Lead Full-Stack Developer | [@Yanzz231](https://github.com/Yanzz231) |
+| **Jeremy Auriel Zhang** | Full-Stack Developer                     | [@jeremzhg](https://github.com/jeremzhg) |
+| **Calvin Wu**           | Product Manager                          | [@5calvinw](https://github.com/5calvinw) |
 
 ---
 
@@ -45,36 +48,16 @@
 
 ### Latar Belakang
 
-Aplikasi navigasi umumnya mengoptimalkan waktu dan jarak. Bagi pejalan kaki dan pesepeda, keputusan perjalanan juga dipengaruhi kualitas udara, cuaca, aksesibilitas jalur, dan gangguan yang terjadi di lapangan. Informasi tersebut sering tersebar dan tidak terlihat dalam satu alur pengambilan keputusan.
-
-AERoute mengangkat **SDG 11 — Kota dan Komunitas Berkelanjutan** melalui solusi mobilitas aktif yang membantu masyarakat memilih rute berjalan kaki dan bersepeda dengan konteks lingkungan serta kondisi komunitas.
+![Latar Belakang AERoute](https://raw.githubusercontent.com/AERoutee/.github/main/assets/LatarBelakang.png)
 
 ### Solusi yang Ditawarkan
 
-AERoute membandingkan alternatif rute berjalan kaki dan bersepeda menggunakan waktu tempuh, jarak, dan modeled PM2.5 exposure index. Setiap rute dapat menampilkan perubahan sample PM2.5 per segmen, weather checkpoints, live location, serta laporan komunitas dengan foto.
+![Mockup AERoute](https://raw.githubusercontent.com/AERoutee/.github/main/assets/mockups.png)
+![Solusi yang Ditawarkan](https://raw.githubusercontent.com/AERoutee/.github/main/assets/Solusi.png)
 
-```text
-estimated exposure index = average route PM2.5 × travel time in minutes
-```
+### Tujuan Projek
 
-AERoute adalah produk informasional. Exposure index bukan personal dose, diagnosis, atau pengganti advis medis.
-
-### Tujuan Proyek
-
-- 🎯 **Tujuan Utama**: membantu pengguna memahami trade-off rute sebelum berjalan atau bersepeda.
-- 📊 **Target Pengguna**: pejalan kaki, pesepeda, komuter perkotaan, dan pengguna yang lebih sensitif terhadap polusi.
-- 💡 **Value Proposition**: menggabungkan route alternatives, PM2.5 context, weather context, live location, dan laporan komunitas pada satu map-first experience.
-
-### Kesesuaian Aspek Penilaian
-
-| Aspek Penyisihan | Bukti pada AERoute |
-| --- | --- |
-| **Kesesuaian Tema & Subtema — 20%** | Mendukung SDG 11 melalui route planning untuk mobilitas aktif, environmental context, dan community road reports |
-| **Inovasi & Orisinalitas Ide — 20%** | Menggabungkan route alternatives, PM2.5 per segmen, weather checkpoints, live location, dan laporan komunitas |
-| **Fungsionalitas Website — 20%** | Auth, OAuth, profile, recovery, route comparison, clickable polylines, reports, image upload, dan responsive panels terintegrasi end-to-end |
-| **UI/UX & Responsivitas — 15%** | Public pages responsif, mobile bottom navigation, draggable desktop panels, bottom sheets, keyboard controls, dan semantic forms |
-| **Implementasi Teknologi — 15%** | React/Vite SPA, Express modular API, Better Auth, Prisma/PostgreSQL, Google Maps Platform, private object storage, dan OpenAPI 3.1 |
-| **Dokumentasi & Repositori — 10%** | README kompetisi, environment contract, architecture, setup, Swagger UI, dan semantic commit history |
+![Solusi yang Ditawarkan](https://raw.githubusercontent.com/AERoutee/.github/main/assets/tujuan.png)
 
 ---
 
@@ -82,25 +65,25 @@ AERoute adalah produk informasional. Exposure index bukan personal dose, diagnos
 
 ### Fitur Utama
 
-| Fitur | Deskripsi | Keunggulan |
-| --- | --- | --- |
-| **PM2.5 Route Comparison** | Membandingkan alternatif rute berdasarkan waktu, jarak, dan exposure index | Trade-off lebih transparan daripada shortest-route only |
-| **Segment-Level Air Context** | Mewarnai bagian rute berdasarkan sample PM2.5 lokal | Menunjukkan bahwa kondisi tidak selalu sama sepanjang rute |
-| **Weather Along Route** | Menampilkan hourly forecast sesuai estimasi waktu pengguna mencapai titik rute | Prediksi cuaca terlihat langsung di map tanpa mencampur skor PM2.5 |
-| **Community Road Reports** | Pengguna dapat melaporkan hazard, blocked path, crash, construction, atau map issue | Informasi lapangan tampil sebagai marker komunitas selama 24 jam |
-| **Live Location** | Posisi dan heading diperbarui melalui browser geolocation | Mendukung pengalaman navigasi map-first |
+| Fitur                                | Deskripsi                                                                                                                                                                                                                                                                                 | Keunggulan                                                                                                                                    |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Perbandingan Rute Multimoda**      | Pengguna dapat memilih satu hingga tiga mode dari **Walk, Cycle, Bus, Train, dan Subway**. AERoute membandingkan rute aktif secara terpisah atau menyusun perjalanan terintegrasi seperti Cycle → Transit → Walk sesuai kombinasi yang tersedia.                                          | Satu planner dapat membantu pengguna membandingkan perjalanan aktif dan transportasi umum tanpa berpindah aplikasi.                           |
+| **Analisis Paparan PM2.5**           | Setiap alternatif menampilkan estimasi PM2.5 untuk keberangkatan saat ini, +30 menit, dan +60 menit. Kondisi per segmen divisualisasikan langsung pada garis rute dengan warna hijau, kuning, merah, atau abu-abu ketika data tidak tersedia.                                             | Pengguna dapat melihat perubahan kualitas udara sepanjang perjalanan dan mempertimbangkan waktu keberangkatan, bukan hanya jarak atau durasi. |
+| **Rekomendasi Rute yang Transparan** | AERoute menampilkan label rekomendasi, alasan pemilihan, trade-off, keterbatasan data, dan **evidence completeness** untuk setiap hasil. Prioritas aktif tersedia dalam mode **Balanced** dan **Lower exposure**, sedangkan transit menyediakan **Less walking** dan **Fewer transfers**. | Hasil tidak diberikan sebagai skor misterius; pengguna dapat memahami faktor yang membuat satu rute lebih sesuai daripada alternatif lain.    |
+| **Konteks Cuaca, Panas, dan UV**     | Checkpoint cuaca mengikuti perkiraan waktu pengguna mencapai bagian tertentu dari rute. Ringkasan suhu, peluang hujan, angin, UV, serta rekomendasi waktu istirahat ditampilkan bersama hasil perjalanan.                                                                                 | Membantu pengguna menilai kenyamanan perjalanan berdasarkan kondisi yang mungkin ditemui di sepanjang rute.                                   |
+| **Rest Stop dan Informasi Transit**  | Kandidat tempat istirahat dan titik transit muncul sebagai marker interaktif. Popup menampilkan alamat, status buka, toilet, parkir, tempat duduk, informasi aksesibilitas yang tersedia, maksimal tiga foto beratribusi, dan **View 360°** ketika Street View tersedia.                  | Informasi pendukung perjalanan dapat diperiksa langsung dari peta tanpa menutupi konteks rute yang sedang dipilih.                            |
+| **Community Road Reports**           | Pengguna dapat membuat laporan hazard, jalan terhalang, kecelakaan, konstruksi, atau masalah peta dengan deskripsi dan maksimal tiga foto. Pengguna lain dapat **Confirm**, **Dispute**, atau menarik verifikasi, sedangkan pemilik dapat menyelesaikan laporannya.                       | Kondisi lapangan yang belum tercakup provider peta dapat menjadi sinyal tambahan dalam evaluasi rute.                                         |
+| **Live Location dan Route Guidance** | Lokasi serta arah pengguna diperbarui melalui browser geolocation. Setelah memperoleh lokasi yang masih baru, akurat, dan dekat titik awal, pengguna dapat memulai tampilan panduan rute; rute non-transit juga mendukung pembaruan ketika pengguna menyimpang.                           | Memberikan pengalaman map-first dari tahap perencanaan hingga perjalanan dimulai.                                                             |
+| **Insights Perjalanan**              | Perjalanan yang dikonfirmasi dapat dicatat sebagai **modeled trip impact**. Halaman Insights merangkum jumlah perjalanan, jarak dan durasi aktif, estimasi pengurangan exposure index, serta lebih sedikitnya sinyal laporan terkonfirmasi.                                               | Pengguna memperoleh ringkasan dampak pilihan rute berdasarkan hasil perencanaan yang tersimpan.                                               |
 
 ### Fitur Tambahan
 
-- **Route Priority** — Balanced dan Lower exposure.
-- **Sensitive-user Mode** — memperluas toleransi waktu Balanced dari 20% menjadi 35%.
-- **Clickable Route Lines** — garis route memiliki touch target besar dan dapat dipilih langsung.
-- **Weather Checkpoints** — hourly forecast diambil pada 25%, 50%, dan 75% route berdasarkan ETA masing-masing titik.
-- **Google OAuth** — login melalui Google atau email/password.
-- **Secure Recovery** — opaque challenge ID dan OTP enam digit.
-- **Profile Photo** — crop, resize, WebP processing, dan private storage.
-- **Responsive Panels** — draggable desktop panels dan mobile bottom sheets.
-- **Public Pages** — Landing, About, Vision & Mission, FAQ, Contact, dan responsive 404.
+- **Peta Interaktif** - alternatif dapat dipilih melalui kartu hasil maupun garis rute; layer cuaca, aksesibilitas, rest stop, dan laporan komunitas dapat dikontrol dari dashboard.
+- **Reduced-exertion Approximation** - menyediakan alternatif berdasarkan data usaha perjalanan yang tersedia tanpa mengklaim rute wheelchair-safe atau sepenuhnya step-free.
+- **PWA Offline Summary** - menyimpan ringkasan terbatas dari rute terakhir selama maksimal 24 jam tanpa koordinat dan identitas pengguna.
+- **Autentikasi dan Pemulihan Akun** - mendukung email/password, Google OAuth, OTP enam digit, reset password, dan pencabutan sesi lama.
+- **Pengelolaan Profil** - pengguna dapat memperbarui nama dan foto profil; gambar diproses sebelum disimpan pada object storage privat.
+- **Dashboard Responsif** - planner, hasil rute, report flow, popup peta, dan navigasi disesuaikan untuk desktop maupun perangkat mobile.
 
 ---
 
@@ -108,23 +91,21 @@ AERoute adalah produk informasional. Exposure index bukan personal dose, diagnos
 
 ### Live Demo
 
-Live demo belum dipublikasikan.
-
-Target deployment:
-
-```text
-Website : https://aeroute.my.id
-API     : https://api.aeroute.my.id
-Swagger : https://api.aeroute.my.id/api/docs
-```
+| Layanan      | URL                                                                      |
+| ------------ | ------------------------------------------------------------------------ |
+| Live Website | [https://aeroute.my.id](https://aeroute.my.id)                           |
+| API          | [https://api.aeroute.my.id](https://api.aeroute.my.id)                   |
+| Swagger UI   | [https://api.aeroute.my.id/api/docs](https://api.aeroute.my.id/api/docs) |
 
 ### Screenshot Aplikasi
 
-Screenshot kompetisi belum ditambahkan. Screenshot landing, dashboard desktop, dashboard mobile, profile, dan report flow akan ditambahkan setelah deployment final.
+![Screenshot AERoute](https://raw.githubusercontent.com/AERoutee/.github/main/assets/screenshots.png)
 
 ### Video Demo
 
-Video demo belum tersedia.
+## Link Video Demo: https://www.youtube.com/watch?v=qeQefV2TFRI
+
+[![Watch the demo](https://raw.githubusercontent.com/AERoutee/.github/main/assets/thumbnail.png)](https://www.youtube.com/watch?v=qeQefV2TFRI)
 
 ---
 
@@ -134,71 +115,66 @@ Video demo belum tersedia.
 
 #### Frontend
 
-```text
-Framework    : React 19 + Vite 8 + TypeScript
-UI Library   : Tailwind CSS 4
-Routing      : React Router
-Server State : TanStack Query + Axios
-Authentication: Better Auth React Client
-Maps         : Google Maps JavaScript API + Places
-Animation    : Motion
-```
+![Tech Stack Frontend AERoute](https://raw.githubusercontent.com/AERoutee/.github/main/assets/frontend.png)
 
 #### Backend
 
-```text
-Runtime      : Node.js + TypeScript ESM
-Framework    : Express 5
-Database     : PostgreSQL
-ORM          : Prisma 7
-Authentication: Better Auth
-Validation   : Zod
-Media        : Multer + Sharp + S3-compatible storage
-Documentation: OpenAPI 3.1 + Swagger UI
-```
+![Tech Stack Backend AERoute](https://raw.githubusercontent.com/AERoutee/.github/main/assets/backend.png)
 
 #### DevOps & Tools
 
-```text
-Deployment   : Railway
-Target Web   : aeroute.my.id
-Target API   : api.aeroute.my.id
-CI/CD        : Railway GitHub Integration (auto-deploy dari branch terhubung)
-Testing      : Jest, React Testing Library, lint, TypeScript, build, Prisma validation
-Monitoring   : LogRocket untuk frontend; Railway logs dan redacting request logger untuk backend
-```
+![Tech Stack DevOps & Tools AERoute](https://raw.githubusercontent.com/AERoutee/.github/main/assets/devops.png)
 
 ### Alasan Pemilihan Teknologi
 
-| Teknologi | Alasan Pemilihan |
-| --- | --- |
-| **React + Vite** | Cocok untuk map overlays, responsive panels, route-level code splitting, dan development cepat |
-| **Google Maps Platform** | Menyediakan map, place search, route geometry, air-quality, dan weather provider |
-| **Express + Better Auth** | API modular dengan database session, OAuth, credential accounts, dan password management |
-| **PostgreSQL + Prisma** | Data relasional, migration eksplisit, generated client, dan repository contract typed |
-| **Sharp + S3 Storage** | Memproses avatar/report images tanpa membuat object storage publik |
-| **Swagger UI** | Kontrak API dapat dibaca dan diuji secara interaktif oleh juri maupun frontend developer |
+| Teknologi                                 | Alasan Pemilihan                                                                                                                                                                                    |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **React 19 + Vite 8 + TypeScript**        | Digunakan untuk membangun frontend AERoute yang cepat, berbasis komponen, dan memiliki struktur data yang konsisten untuk pengelolaan rute, koordinat, state navigasi, serta komunikasi dengan API. |
+| **Tailwind CSS 4**                        | Mempermudah pembuatan antarmuka yang responsif dan konsisten untuk penggunaan desktop maupun mobile.                                                                                                |
+| **React Router + TanStack Query + Axios** | Mengelola navigasi client-side, server state, caching, mutation, serta komunikasi HTTP antara frontend dan backend secara terstruktur.                                                              |
+| **Google Maps JavaScript API**            | Menampilkan peta, marker, polyline rute, Places, popup lokasi, serta mendukung visualisasi dan navigasi pengguna.                                                                                   |
+| **Node.js + Express 5 + TypeScript**      | Menyediakan backend REST API yang fleksibel untuk menangani autentikasi, perbandingan rute, laporan, profil, insight, dan integrasi dengan berbagai layanan eksternal.                              |
+| **PostgreSQL + Prisma 7**                 | Digunakan untuk menyimpan dan mengelola data relasional AERoute dengan dukungan schema, migration, transaction, relation, dan type-safe database client.                                            |
+| **Better Auth**                           | Menangani autentikasi pengguna, session, login email/password, Google OAuth, account linking, dan verifikasi akun.                                                                                  |
+| **Google Routes API**                     | Menyediakan alternatif rute, durasi, jarak, geometry, informasi transit, serta instruksi navigasi.                                                                                                  |
+| **Google Air Quality API**                | Menyediakan data PM2.5 saat ini dan forecast untuk membantu membandingkan kondisi kualitas udara pada alternatif rute.                                                                              |
+| **Google Weather API**                    | Menyediakan informasi cuaca berdasarkan lokasi dan estimasi waktu kedatangan pengguna, seperti hujan, angin, jarak pandang, panas, dan UV.                                                          |
+| **Google Places API**                     | Digunakan untuk mencari dan menampilkan kandidat tempat istirahat serta informasi fasilitas dan aksesibilitas yang tersedia.                                                                        |
+| **AWS SDK S3 + Multer + Sharp**           | Menangani upload, pemrosesan, optimasi, dan penyimpanan gambar profil maupun laporan pada private S3-compatible object storage.                                                                     |
+| **Zod**                                   | Memvalidasi data pada frontend maupun input API backend agar data yang diproses sesuai dengan struktur yang diharapkan.                                                                             |
+| **Jest + React Testing Library + SWC**    | Digunakan untuk menjalankan pengujian frontend dan backend, termasuk unit test, integration test, serta pengujian perilaku antarmuka pengguna.                                                      |
+| **OpenAPI 3.1 + Swagger UI**              | Mendokumentasikan endpoint API, struktur request dan response, serta kontrak error backend.                                                                                                         |
 
 ### Dependencies Utama
 
 ```json
 {
-  "frontend": {
-    "react": "^19.2.8",
-    "react-router": "^8.3.0",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1117.0",
+    "@better-auth/prisma-adapter": "^1.7.1",
+    "@googlemaps/js-api-loader": "^2.1.1",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "@tanstack/react-query": "^5.102.2",
     "axios": "^1.19.0",
     "better-auth": "^1.7.1",
-    "motion": "^13.1.1",
-    "logrocket": "^12.3.0"
-  },
-  "backend": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "better-auth": "^1.7.1",
-    "@prisma/client": "^7.9.1",
-    "zod": "^4.4.3",
+    "helmet": "^8.3.0",
+    "logrocket": "^12.3.0",
+    "lucide-react": "^1.33.0",
+    "motion": "^13.1.1",
+    "multer": "^2.2.0",
+    "nodemailer": "^9.0.5",
+    "pg": "^8.23.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router": "^8.3.0",
+    "serve": "^14.2.6",
     "sharp": "^0.35.3",
-    "swagger-ui-express": "^5"
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.4.3"
   }
 }
 ```
@@ -209,78 +185,27 @@ Monitoring   : LogRocket untuk frontend; Railway logs dan redacting request logg
 
 ### System Architecture
 
-```mermaid
-flowchart TD
-    U[Browser User] --> FE[AERoute Frontend]
-    FE --> GM[Google Maps JavaScript API]
-    FE -->|HTTPS + Session Cookie| BE[AERoute Backend]
-    BE --> AUTH[Better Auth]
-    BE --> ROUTES[Google Routes API]
-    BE --> AQ[Google Air Quality API]
-    BE --> WEATHER[Google Weather API]
-    BE --> SMTP[SMTP Provider]
-    BE --> S3[Private S3-Compatible Storage]
-    AUTH --> DB[(PostgreSQL)]
-    BE --> DB
-```
-
-Frontend mengelola interaksi dan visualisasi. Backend menjadi sumber kebenaran untuk validation, ownership, provider orchestration, route ranking, PM2.5 sampling, recovery, report persistence, dan image processing.
+![AERoute System Architecture](https://raw.githubusercontent.com/AERoutee/AERoute-FE/main/assets/Architecture.png)
 
 ### Database Schema
 
-```mermaid
-erDiagram
-    MsUser ||--o{ MsAccount : owns
-    MsUser ||--o{ TrSession : has
-    MsUser ||--o{ TrRouteComparison : creates
-    TrRouteComparison ||--o{ TrRouteResult : contains
-    MsUser ||--o{ TrRoadReport : submits
-    TrRoadReport ||--o{ TrRoadReportImage : contains
-
-    MsUser {
-      string id PK
-      string email UK
-      string name
-    }
-    TrRouteComparison {
-      uuid id PK
-      string mode
-      string preference
-    }
-    TrRoadReport {
-      uuid id PK
-      string category
-      float latitude
-      float longitude
-      datetime expiresAt
-    }
-```
+![AERoute Entity Relationship Diagram](https://raw.githubusercontent.com/AERoutee/AERoute-FE/main/assets/ERD.png)
 
 ### Folder Structure
 
 ```text
 AERoute/
 ├── AERoute-FE/
-│   ├── public/
-│   └── src/
-│       ├── api/
-│       ├── assets/
-│       ├── components/
-│       ├── config/
-│       ├── context/
-│       ├── hooks/
-│       ├── pages/
-│       └── types/
+│   ├── public/               # manifest, service worker, offline page
+│   ├── src/api/              # auth, routes, reports, insights
+│   ├── src/components/       # map, layout, feature UI
+│   ├── src/pages/            # dashboard, insights, profile, public pages
+│   └── tests/
 ├── AERoute-BE/
-│   ├── prisma/
-│   └── src/
-│       ├── config/
-│       ├── middleware/
-│       ├── modules/
-│       └── utils/
-├── docs/
-├── .github/profile/
-└── PRD.md
+│   ├── prisma/               # schema and migrations
+│   ├── src/modules/          # route comparison, reports, insights, auth/recovery/profile
+│   └── tests/
+└── .github/profile/
 ```
 
 ---
@@ -289,15 +214,11 @@ AERoute/
 
 ### Prerequisites
 
-Pastikan telah menginstall:
-
-- Node.js 24 atau versi LTS modern yang didukung Vite 8.
-- npm.
-- PostgreSQL.
-- Git.
-- Google Cloud project dengan Maps JavaScript, Places, Routes, Air Quality, dan Weather API.
-- SMTP account.
-- S3-compatible private bucket.
+- Node.js 24 atau versi LTS modern yang didukung toolchain.
+- npm, PostgreSQL, dan Git.
+- Google Cloud project dengan **Maps JavaScript API, Places API, Routes API, Air Quality API, dan Weather API** aktif serta billing/credentials yang sesuai.
+- Browser key yang dibatasi untuk frontend dan server key yang dibatasi untuk backend.
+- SMTP account dan private S3-compatible bucket untuk recovery serta images.
 
 ### 1️⃣ Clone Repository
 
@@ -316,11 +237,9 @@ npm run db:migrate
 npm run dev
 ```
 
-Backend berjalan di `http://localhost:3000`.
+Backend berjalan di `http://localhost:3000`. `npm run db:migrate` menjalankan `prisma migrate deploy`, termasuk migration `20260901000100`, `20260901000200`, dan `20260902000100` pada database yang belum memilikinya.
 
 ### 3️⃣ Setup Frontend
-
-Buka terminal kedua:
 
 ```bash
 cd AERoute-FE
@@ -353,21 +272,14 @@ Email       : SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASSWORD
 Storage     : S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_PUBLIC_BASE_URL, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY
 ```
 
-Jangan commit `.env`. Server secrets tidak boleh memakai prefix `VITE_`.
+Jangan commit `.env`; server secrets tidak boleh memakai prefix `VITE_`.
 
 ### Railway Deployment & CI/CD
 
-Kedua repository memiliki `railway.json`:
-
-- Railway Railpack menjalankan `npm ci --include=dev` dan production build.
-- Backend menjalankan `npm run db:migrate` sebagai pre-deploy command.
+- Railway Railpack menjalankan dependency install dan production build.
+- Backend menjalankan `npm run db:migrate` sebagai **pre-deploy command** sebelum aplikasi baru aktif.
 - Backend health check memakai `/api/health`; frontend memakai `/`.
-- Railway GitHub Integration menjadi CI/CD deployment: push ke branch terhubung memicu build, health check, dan deploy otomatis.
-- Variable production dikonfigurasi melalui Railway Variables, bukan file `.env` di repository.
-
-### Monitoring
-
-LogRocket hanya diinisialisasi pada production ketika `VITE_LOGROCKET_APP_ID` tersedia. Konfigurasi AERoute menonaktifkan IP capture serta menyensor text, inputs, images, query strings, request/response body, dan headers. Backend dipantau melalui Railway logs dan request logger yang meredaksi credential, OTP, cookie, token, dan file buffer.
+- Railway Variables menyimpan production configuration; push ke branch terhubung memicu build, migration predeploy, health check, dan deploy.
 
 ---
 
@@ -379,60 +291,63 @@ Frontend:
 
 ```bash
 npm run dev
+npm test
+npm run test:coverage
 npm run lint
 npm run typecheck
 npm run build
-npm run preview
 ```
 
 Backend:
 
 ```bash
 npm run dev
+npm test
+npm run test:coverage
 npm run lint
 npm run typecheck
 npm run build
-npm start
 npm run db:migrate
-npm run db:studio
+npx prisma validate
 ```
 
 ### User Guide
 
-#### Untuk Pengguna Umum
+#### Membandingkan Rute
 
-1. Buka landing page AERoute.
-2. Pilih **Sign in** atau **Create account**.
-3. Buka dashboard map.
-4. Izinkan browser location jika ingin live marker dan road report.
-5. Pilih origin dan destination.
-6. Pilih Walk/Cycle serta Balanced/Lower exposure.
-7. Aktifkan Sensitive-user mode bila ingin toleransi waktu Balanced lebih konservatif.
-8. Tekan **Compare routes**.
-9. Klik route card atau langsung klik garis route pada map.
-10. Aktifkan Weather/Community Reports melalui Layers bila diperlukan.
+1. Buka [AERoute](https://aeroute.my.id), masuk, lalu buka dashboard map.
+2. Pilih origin dan destination melalui Places atau map.
+3. Aktifkan satu sampai maksimal tiga mode dari **Walk, Cycle, Bus, Train, dan Subway** sebagai preferensi/kandidat. Walk + Cycle tanpa transit membandingkan dua alternatif aktif terpisah. Cycle + satu atau lebih transit menjalankan itinerary komposit Cycle → transit → Walk bersama fallback transit native; parkir sepeda pada transit pertama tidak diverifikasi.
+4. Untuk Walk/Cycle tanpa transit atur **Balanced** atau **Lower exposure**. Jika itinerary memuat Bus/Train/Subway, atur hanya **Less walking** atau **Fewer transfers** untuk seluruh itinerary transit.
+5. Opsional: aktifkan sensitive-user, reduced-exertion approximation, report preference, dan layer rest-stop candidates.
+6. Tekan **Compare routes** untuk melihat current, +30, dan +60, lalu periksa explanation, trade-offs, evidence completeness, hazard signals, Break/heat/UV, PM2.5 segment legend, dan limitations.
+7. Pilih route card/polyline. **Start route guidance** aktif hanya dengan live fix yang fresh, akurat, dan dekat origin; transit/composite tidak melakukan auto reroute dan fitur ini bukan turn-by-turn guidance.
 
-#### Mengirim Community Report
+![Tutorial melihat dan memilih rute AERoute](https://raw.githubusercontent.com/AERoutee/.github/main/assets/Guide1.png)
 
-1. Tekan **Report** pada dashboard.
-2. Pilih kategori masalah.
-3. Lokasi report diambil ketika report flow dimulai.
-4. Isi deskripsi 10–500 karakter.
-5. Tambahkan maksimal tiga foto JPG/PNG/WebP, maksimal 3 MB per gambar.
-6. Klik thumbnail untuk full-screen preview sebelum submit.
-7. Submit report. Report aktif selama 24 jam dan dapat dilihat pengguna lain pada viewport terkait.
+#### Community Report
+
+1. Tekan **Report**, pilih kategori, isi deskripsi, dan tambahkan maksimal tiga JPG/PNG/WebP berukuran maksimal 3 MB per file.
+2. Report aktif hingga 24 jam kecuali diselesaikan lebih awal oleh pemilik.
+3. Pengguna lain dapat **Confirm**, **Dispute**, atau menarik verification; pemilik dapat resolve report miliknya.
+4. Evidence score menggabungkan recency, foto, dan confirmation balance; skor bukan bukti kebenaran atau keselamatan.
+
+![Tutorial membuat Community Report AERoute](https://raw.githubusercontent.com/AERoutee/.github/main/assets/Guide2.png)
 
 #### Mengelola Akun
 
-1. Buka menu profile.
-2. Ubah nama atau profile photo.
-3. Akun Google dapat menambahkan password setelah verifikasi OTP.
-4. Forgot-password membuat opaque challenge ID dan mengirim OTP enam digit.
-5. Password reset mencabut session lama.
+1. Buka menu akun pada dashboard, lalu pilih **Profile**.
+2. Ubah foto profil melalui tombol edit pada avatar.
+3. Ubah nama melalui **Edit name**, lalu simpan perubahan.
+4. Akun Google dapat menambahkan password setelah verifikasi email.
 
-#### Admin
+![Tutorial mengelola akun AERoute](https://raw.githubusercontent.com/AERoutee/.github/main/assets/Guide3.png)
 
-AERoute MVP belum memiliki admin panel. Moderation/admin workflow belum termasuk scope aktif.
+#### Insights dan Offline
+
+1. Setelah perjalanan, konfirmasi pencatatan modeled trip impact dari persisted route result; **Recorded trips** adalah planned/model estimate, bukan GPS trace.
+2. Buka route **`/insights`** melalui menu **Insights** untuk melihat modeled impact summary. Insights saat ini hanya memodelkan impact; Saved Commute tetap kompatibel di backend, tetapi UI pembuatan, pengelolaan, dan watch telah dihapus.
+3. Saat offline, PWA hanya menampilkan reduced summary terakhir hingga 24 jam; koordinat dan identitas pengguna tidak disimpan pada summary tersebut.
 
 ---
 
@@ -443,124 +358,112 @@ AERoute MVP belum memiliki admin panel. Moderation/admin workflow belum termasuk
 ```text
 Development : http://localhost:3000
 Production  : https://api.aeroute.my.id
-Swagger UI : https://api.aeroute.my.id/api/docs
+Swagger UI  : https://api.aeroute.my.id/api/docs
 OpenAPI JSON: https://api.aeroute.my.id/api/openapi.json
 ```
 
-Local Swagger:
-
-```text
-http://localhost:3000/api/docs
-http://localhost:3000/api/openapi.json
-```
-
-### Health
+### Health, Authentication, Recovery, dan Profile
 
 ```http
-GET /api/health
-```
-
-### Authentication
-
-```http
-POST /api/auth/sign-up/email
-POST /api/auth/sign-in/email
-POST /api/auth/sign-in/social
-GET  /api/auth/get-session
-POST /api/auth/sign-out
-POST /api/auth/update-user
-POST /api/auth/change-password
-GET  /api/auth/list-accounts
-```
-
-### Password Recovery
-
-```http
-POST /api/v1/recovery-challenges
-GET  /api/v1/recovery-challenges/:id
-POST /api/v1/recovery-challenges/:id/resend
-POST /api/v1/recovery-challenges/:id/verify
-POST /api/v1/recovery-challenges/:id/reset
-```
-
-### Profile Image
-
-```http
+GET    /api/health
+POST   /api/auth/sign-up/email
+POST   /api/auth/sign-in/email
+POST   /api/auth/sign-in/social
+GET    /api/auth/get-session
+POST   /api/auth/sign-out
+POST   /api/auth/update-user
+POST   /api/auth/change-password
+GET    /api/auth/list-accounts
+POST   /api/v1/recovery-challenges
+GET    /api/v1/recovery-challenges/:id
+POST   /api/v1/recovery-challenges/:id/resend
+POST   /api/v1/recovery-challenges/:id/verify
+POST   /api/v1/recovery-challenges/:id/reset
 GET    /api/v1/profile/avatar/:userId
 PUT    /api/v1/profile/avatar
 DELETE /api/v1/profile/avatar
 ```
 
-### Route Comparison
+### Authenticated Route Comparison
 
 ```http
 POST /api/v1/route-comparisons
+GET  /api/v1/place-photos?name=...
 ```
+
+Request menerima mode aktif/transit, transit modes/preference, optional Cycle-to-transit access plan, accessibility mode, departure offsets `0/30/60`, hazard policy, dan rest-stop option. Walk normal meminta rest stops; composite Cycle + transit memakai offset `0`, tanpa rest stops, dan selalu disertai request fallback transit native. Response memuat current routes, future departure comparisons, compact/full itinerary segments, explanation/evidence completeness, report signals, Break/weather/heat/UV, serta Places candidates dengan Place ID/association ID yang dipersistenkan bila tersedia, maksimal tiga foto beserta Google Maps/report URI, facility/accessibility facts, source disclosure, dan warnings. Detail transit mengirim `routeResultId`, ordinal, dan role hanya ketika association context tersedia.
 
 ### Community Road Reports
 
 ```http
-GET  /api/v1/road-reports
-POST /api/v1/road-reports
-GET  /api/v1/road-report-images/:id
+GET    /api/v1/road-reports
+GET    /api/v1/road-reports/mine
+POST   /api/v1/road-reports
+PUT    /api/v1/road-reports/:id/verification
+DELETE /api/v1/road-reports/:id/verification
+PATCH  /api/v1/road-reports/:id
+GET    /api/v1/road-report-images/:id
 ```
 
-Dokumentasi request body, response schema, multipart upload, cookie security, contoh, dan status code tersedia lengkap di Swagger UI.
+`GET nearby` dan image read bersifat public sesuai lifecycle report; create, mine, verification, retract, dan owner resolution membutuhkan session.
+
+### Saved Commute & Trip Impact
+
+```http
+GET    /api/v1/saved-commutes
+POST   /api/v1/saved-commutes
+PATCH  /api/v1/saved-commutes/:id
+DELETE /api/v1/saved-commutes/:id
+POST   /api/v1/trip-impacts
+GET    /api/v1/trip-impacts/summary
+```
+
+Seluruh endpoint saved commute dan trip impact membutuhkan authentication. Endpoint Saved Commute dipertahankan untuk kompatibilitas backend dan record lama; frontend tidak lagi menyediakan UI pembuatan atau pengelolaan. Insights saat ini hanya menyajikan modeled trip impact. Kontrak request/response, multipart upload, cookie security, examples, dan status codes tersedia di Swagger UI.
 
 ---
 
 ## 🧪 Testing
 
-Jest digunakan untuk pure business logic dan behavior-focused component tests. Test provider eksternal tetap dilakukan melalui integration/manual QA agar tidak menghasilkan test palsu.
-
-### Running Tests
+### Perintah Verifikasi
 
 ```bash
-# Frontend atau backend
+# Jalankan di masing-masing repository
 npm test
-npm run test:watch
 npm run test:coverage
-```
-
-### Quality Checks
-
-```bash
-# Frontend
 npm run lint
 npm run typecheck
 npm run build
 
-# Backend
-npm run lint
-npm run typecheck
-npm run build
+# Backend database contract
 npx prisma validate
+npm run db:migrate
 ```
 
-### Integration QA
+Tidak ada klaim perintah E2E karena package frontend maupun backend tidak menyediakan script E2E.
 
-- Google Maps rendering dan Places autocomplete.
-- Walking/cycling provider coverage.
-- PM2.5 dan weather sampling.
-- Browser geolocation dan heading update.
-- Camera/gallery upload dan image preview.
-- Better Auth email/password dan Google OAuth.
-- SMTP connection serta OTP delivery.
-- Private object-storage read/write/delete.
-- Swagger UI dan OpenAPI JSON.
+### Hasil Terverifikasi
 
-### Coverage
+## Unit Testing Frontend
 
-Coverage dapat dibuat melalui `npm run test:coverage`. Minimum global threshold yang dikonfigurasi: 80% lines/functions/statements dan 70% branches untuk file yang masuk coverage scope.
+![Unit Test FE](https://raw.githubusercontent.com/AERoutee/.github/main/assets/unittest1.jpg)
 
-Hasil terakhir pada coverage scope:
+## Unit Testing backend
 
-```text
-Frontend : 98.23% statements, 85.29% branches, 100% functions, 100% lines
-Backend  : 99.45% statements, 96.85% branches, 98.57% functions, 100% lines
-```
+![Unit Test BE](https://raw.githubusercontent.com/AERoutee/.github/main/assets/unittest2.jpg)
 
-Angka tersebut hanya mewakili pure logic/components yang masuk `collectCoverageFrom`, bukan keseluruhan Google Maps/provider integration.
+| Repository   | Suites | Tests | Statements | Branches | Functions |  Lines | Status                                       |
+| ------------ | -----: | ----: | ---------: | -------: | --------: | -----: | -------------------------------------------- |
+| **Frontend** |     33 |   210 |     93.61% |   85.02% |    91.01% | 97.68% | tests, coverage, lint, typecheck, build pass |
+| **Backend**  |     20 |   344 |     95.47% |   87.27% |    95.48% | 98.17% | tests, coverage, lint, typecheck, build pass |
+
+`prisma validate` dan migration deploy pass. Coverage thresholds:
+
+| Repository           | Statements | Branches | Functions | Lines |
+| -------------------- | ---------: | -------: | --------: | ----: |
+| **Frontend minimum** |        80% |      70% |       80% |   80% |
+| **Backend minimum**  |        95% |      85% |       95% |   95% |
+
+Provider behavior yang bergantung pada Google coverage, browser geolocation, SMTP, dan object storage tetap memerlukan integration/manual QA dengan credentials dan environment yang sesuai; angka coverage tidak diklaim sebagai cakupan provider eksternal end-to-end.
 
 ---
 
@@ -572,6 +475,6 @@ Proyek ini dilisensikan di bawah [MIT License](https://github.com/AERoutee/AERou
 
 <div align="center">
 
-  **Made with ❤️ by AERoute Team for ITECHNO CUP 2026**
+**Made with ❤️ by Team singular you for ITECHNO CUP 2026**
 
 </div>
